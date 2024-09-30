@@ -1,7 +1,8 @@
+// Registro.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { db } from '../firebase/firebaseconfig'; // Asegúrate de importar tu configuración de Firebase
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../firebase/firebaseconfig'; // Importar auth desde firebaseconfig
 import { setDoc, doc } from 'firebase/firestore';
 
 export default function Registro({ navigation }) {
@@ -15,8 +16,6 @@ export default function Registro({ navigation }) {
   };
 
   const registrarUsuario = async () => {
-    const auth = getAuth();
-
     // Validar el formato del correo electrónico
     if (!email || !validarEmail(email)) {
       alert('Por favor, introduce un correo electrónico válido.');
@@ -30,13 +29,25 @@ export default function Registro({ navigation }) {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      // Crear el usuario con email y contraseña
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Opcional: Puedes guardar información adicional del usuario en Firestore
+      // await setDoc(doc(db, "users", userCredential.user.uid), {
+      //   email: email,
+      //   createdAt: new Date(),
+      // });
+
       alert('Usuario registrado con éxito!');
-      navigation.navigate('SeleccionPerfil'); // Navegar a Selección de Perfil
+      
+      // Redirigir a la pantalla principal (Home)
+      navigation.navigate('Home');
     } catch (error) {
       console.error('Error al registrar:', error.code, error.message);
       if (error.code === 'auth/invalid-email') {
         alert('El formato del correo electrónico no es válido.');
+      } else if (error.code === 'auth/email-already-in-use') {
+        alert('El correo electrónico ya está en uso.');
       } else {
         alert('Error al registrar: ' + error.message);
       }
@@ -52,6 +63,7 @@ export default function Registro({ navigation }) {
         onChangeText={(text) => setEmail(text.trim())} // Eliminar espacios adicionales
         style={styles.input}
         keyboardType="email-address"
+        autoCapitalize="none"
       />
       <TextInput
         placeholder="Contraseña"
@@ -82,4 +94,3 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
 });
-
