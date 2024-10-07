@@ -1,49 +1,43 @@
-// SeleccionPerfil.js
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
 export default function SeleccionPerfil({ navigation }) {
-
-  const seleccionarPerfil = async (perfil) => {
-    try {
-      // Guarda el perfil seleccionado
-      await AsyncStorage.setItem('userProfile', perfil);
-      // Redirige al dashboard correspondiente
-      if (perfil === 'Inversionista') {
-        navigation.replace('InversionistaDashboard'); // Usar replace para evitar volver atrás
-      } else if (perfil === 'Emprendedor') {
-        navigation.replace('EmprendedorDashboard');
-      } else if (perfil === 'Administrador') {
-        // Implementar AdministradorDashboard si lo tienes
-        navigation.navigate('AdministradorDashboard');
-      }
-    } catch (error) {
-      console.error('Error al guardar el perfil:', error);
-      alert('Ocurrió un error al seleccionar el perfil. Inténtalo nuevamente.');
+  const seleccionarPerfil = (perfil) => {
+    if (perfil === 'Inversionista') {
+      navigation.navigate('InversionistaForm');
+    } else if (perfil === 'Emprendedor') {
+      navigation.navigate('EmprendedorDashboard');
+    } else if (perfil === 'Administrador') {
+      navigation.navigate('AdminDashboard');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Selecciona tu perfil</Text>
+      
 
-      {/* Inversionista */}
-      <TouchableOpacity style={styles.button} onPress={() => seleccionarPerfil('Inversionista')}>
-        <AntDesign name="profile" size={24} color="black" style={styles.icon} />
-        <Text style={styles.buttonText}>Inversionista</Text>
-      </TouchableOpacity>
+      <Image 
+        style={styles.logo} 
+        source={require('../assets/icon/StartCap.png')} 
+      />
+      <Text style={styles.subtitle}>Selecciona tu perfil</Text>
 
-      {/* Emprendedor */}
-      <TouchableOpacity style={styles.button} onPress={() => seleccionarPerfil('Emprendedor')}>
-        <AntDesign name="rocket1" size={24} color="black" style={styles.icon} />
-        <Text style={styles.buttonText}>Emprendedor</Text>
-      </TouchableOpacity>
+      {/* Contenedor para Emprendedor e Inversionista */}
+      <View style={styles.rowContainer}>
+        <TouchableOpacity style={styles.button} onPress={() => seleccionarPerfil('Emprendedor')}>
+          <Image source={require('../assets/icon/Emprendedor.png')} style={styles.icon} />
+          <Text style={styles.buttonText}>Emprendedor</Text>
+        </TouchableOpacity>
 
-      {/* Administrador */}
+        <TouchableOpacity style={styles.button} onPress={() => seleccionarPerfil('Inversionista')}>
+          <Image source={require('../assets/icon/Inversionista.png')} style={styles.icon} />
+          <Text style={styles.buttonText}>Inversionista</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Botón para Administrador */}
       <TouchableOpacity style={styles.button} onPress={() => seleccionarPerfil('Administrador')}>
-        <AntDesign name="setting" size={24} color="black" style={styles.icon} />
+        <Image source={require('../assets/icon/Administrador.png')} style={styles.icon} />
         <Text style={styles.buttonText}>Administrador</Text>
       </TouchableOpacity>
     </View>
@@ -53,32 +47,40 @@ export default function SeleccionPerfil({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    backgroundColor: '#F3F3F3',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  logo: {
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
     marginBottom: 20,
-    color: '#0e5575',
+  },
+  subtitle: {
+    fontSize: 20,
+    marginVertical: 20,
+    color: '#333',
+  },
+  rowContainer: {
+    flexDirection: 'row', // Organiza los botones en fila
+    justifyContent: 'space-around', // Espaciado entre los botones
+    width: '80%', // Ajusta el ancho del contenedor
+    marginBottom: 20, // Espacio debajo de esta fila
   },
   button: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
-    backgroundColor: '#f2994a',
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
-    width: '80%',
+    marginVertical: 15,
   },
   buttonText: {
-    color: 'white',
+    fontSize: 16,
+    color: '#003366',
     fontWeight: 'bold',
-    marginLeft: 10, 
+    marginTop: 10,
   },
   icon: {
-    marginRight: 10, 
+    width: 80,
+    height: 80,
   },
 });

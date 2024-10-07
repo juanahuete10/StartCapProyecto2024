@@ -1,60 +1,96 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFirestore, collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+
+
+const firestore = getFirestore();
 
 export default function InversionistaDashboard({ navigation }) {
-  const [formCompleted, setFormCompleted] = useState(false);
+  const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    const checkFormStatus = async () => {
-      const value = await AsyncStorage.getItem('formCompleted');
-      setFormCompleted(value === 'true');
+    
+    const fetchProjects = async () => {
+      const querySnapshot = await getDocs(collection(firestore, 'projects'));
+      const projectsList = [];
+      querySnapshot.forEach((doc) => {
+        projectsList.push({ id: doc.id, ...doc.data() });
+      });
+      setProjects(projectsList);
     };
 
-    checkFormStatus();
+    fetchProjects();
   }, []);
 
   const handleNavigation = (screen) => {
-    console.log(`Navegando a: ${screen}`); 
-    if (!formCompleted && screen !== 'InversionistaForm') {
-      navigation.navigate('InversionistaForm');
-    } else {
-      navigation.navigate(screen);
-    }
+    navigation.navigate(screen);
   };
+
+  const handleMeEncanta = async (id, likes) => {
+    const proyectoRef = doc(firestore, 'projects', id);
+    await updateDoc(proyectoRef, { likes: likes + 1 });
+  };
+
+  const renderProject = ({ item }) => (
+    <View style={styles.projectCard}>
+      <View style={styles.projectHeader}>
+      
+        <Image source={{ uri: item.profileImage }} style={styles.avatar} />
+        <Text style={styles.projectAuthor}>{item.authorName}</Text>
+      </View>
+      <Text style={styles.projectDescription}>{item.description}</Text>
+      <View style={styles.projectFooter}>
+        <TouchableOpacity onPress={() => handleMeEncanta(item.id, item.likes)}>
+          <View style={styles.likesContainer}>
+            <MaterialCommunityIcons name="heart-outline" size={24} color="gray" />
+            <Text style={styles.likesText}>{item.likes} Me encanta</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleNavigation('Chat', { emprendedorId: item.emprendedorId })}>
+          <Text style={styles.chatText}>💬 Ver más</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registro Inversionista</Text>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('InversionistaForm')}>
-          <MaterialCommunityIcons name="form-textbox" size={30} color="#0e5575" />
-          <Text style={styles.buttonText}>Registro</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('InversionistaPerfil')}>
-          <AntDesign name="profile" size={30} color="#0e5575" />
-          <Text style={styles.buttonText}>Perfil</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Notificaciones')}>
-          <MaterialCommunityIcons name="bell-outline" size={30} color="#0e5575" />
-          <Text style={styles.buttonText}>Notificaciones</Text>
+     
+      <View style={styles.navbar}>
+        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Inicio')}>
+          <MaterialCommunityIcons name="home-outline" size={28} color="#003366" />
+          <Text style={styles.navText}>Inicio</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('ExploracionProyecto')}>
-        <AntDesign name="search1" size={24} color="#0e5575" />
-          <Text style={styles.buttonText}>ExploracionProyecto</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Busqueda')}>
+          <MaterialCommunityIcons name="magnify" size={28} color="#003366" />
+          <Text style={styles.navText}>Búsqueda</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Chats')}>
-          <MaterialCommunityIcons name="chat-outline" size={30} color="#0e5575" />
-          <Text style={styles.buttonText}>Chats</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Chats')}>
+          <MaterialCommunityIcons name="message-outline" size={28} color="#003366" />
+          <Text style={styles.navText}>Chats</Text>
         </TouchableOpacity>
 
-  
+        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Notificaciones')}>
+          <MaterialCommunityIcons name="bell-outline" size={28} color="#003366" />
+          <Text style={styles.navText}>Notificaciones</Text>
+        </TouchableOpacity>
 
+        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('InversionistaPerfil')}>
+          <MaterialCommunityIcons name="account-outline" size={28} color="#003366" />
+          <Text style={styles.navText}>Perfil</Text>
+        </TouchableOpacity>
       </View>
+
+     
+      <FlatList
+        data={projects}
+        renderItem={renderProject}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.projectsList}
+      />
     </View>
   );
 }
@@ -62,34 +98,75 @@ export default function InversionistaDashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#F7F9FC',
+  },
+  projectsList: {
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  projectCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 10,
     marginBottom: 20,
-    color: '#0e5575',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
-  buttonContainer: {
-    flexDirection: 'column',
-    width: '100%',
-    alignItems: 'center',
-  },
-  button: {
+  projectHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f2994a',
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
-    width: '80%',
+    marginBottom: 10,
   },
-  buttonText: {
-    color: 'white',
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  projectAuthor: {
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: '#333333',
+  },
+  projectDescription: {
+    fontSize: 14,
+    color: '#666666',
+    marginBottom: 10,
+  },
+  projectFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  likesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  likesText: {
+    marginLeft: 5,
+    color: '#666666',
+    fontSize: 14,
+  },
+  chatText: {
+    color: '#1E90FF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  navbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#CCCCCC',
+    borderBottomWidth: 1,
+  },
+  navItem: {
+    alignItems: 'center',
+  },
+  navText: {
+    color: '#003366',
+    fontSize: 12,
   },
 });

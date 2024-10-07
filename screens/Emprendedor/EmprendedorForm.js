@@ -174,13 +174,14 @@ const EmprendedorForm = () => {
         placeholder="YYYY-MM-DD"
       />
 
-      <Text style={styles.label}>Cédula:</Text>
+<Text style={styles.label}>Cédula:</Text>
       <TextInput
         style={styles.input}
         value={cedula}
         onChangeText={handleCedulaChange}
-        placeholder="000-000000-0000X"
+        placeholder="000-000000-0000Z"
         keyboardType="default"
+        maxLength={16}
       />
 
       <Text style={styles.label}>Género:</Text>

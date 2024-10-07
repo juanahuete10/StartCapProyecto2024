@@ -1,30 +1,33 @@
-// App.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
-// Importa las pantallas
+
 import Home from './screens/Home';
 import Login from './screens/Login';
-import SeleccionPerfil from './screens/SeleccionPerfil';
+import SeleccionPerfil from './screens/SeleccionPerfil'; 
 import Registro from './screens/Registro';
-import InversionistaForm from './Frontend-StartCap/InversionistaForm';
-import InversionistaPerfil from './screens/InversionistaPerfil';
+import InversionistaForm from './Frontend-StartCap/InversionistaForm'; 
+import InversionistaPerfil from './screens/InversionistaPerfil'; 
 import Notificaciones from './screens/Notificaciones';
 import InversionistaDashboard from './screens/InversionistaDashboard';
 import Chats from './screens/Chats';
 import ExploracionProyecto from './screens/ExploracionProyecto';
 import EmprendedorForm from './screens/Emprendedor/EmprendedorForm';
-import EmprendedorDashboard from './screens/Emprendedor/EmprendedorDashboard';
-import Loading from './screens/Loading'; 
+import EmprendedorDashboard from './screens/Emprendedor/EmprendedorDashboard'
+import Inicio from './screens/Inicio';
+import AdminForm from './screens/Administrador/AdminForm';
+import AdminDashboard from './screens/Administrador/AdminDashboard'
+import AdminPerfil from './screens/Administrador/AdminPerfil';
+import Proyectos from './screens/Emprendedor/Proyectos';
+
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Loading">
-        <Stack.Screen name="Loading" component={Loading} options={{ headerShown: false }} />
+      <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="SeleccionPerfil" component={SeleccionPerfil} />
@@ -37,6 +40,12 @@ export default function App() {
         <Stack.Screen name="ExploracionProyecto" component={ExploracionProyecto} />
         <Stack.Screen name="EmprendedorForm" component={EmprendedorForm} />
         <Stack.Screen name="EmprendedorDashboard" component={EmprendedorDashboard} />
+        <Stack.Screen name="AdminForm" component={AdminForm} />
+        <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+        <Stack.Screen name="Inicio" component={Inicio} />
+        <Stack.Screen name="AdminPerfil" component={AdminPerfil} />
+        <Stack.Screen name="Proyectos" component={Proyectos} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

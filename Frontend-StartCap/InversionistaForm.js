@@ -1,83 +1,100 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Image, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Image, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { Picker } from '@react-native-picker/picker'; // Importar el Picker correcto
 import * as ImagePicker from 'expo-image-picker';
 import { db } from '../firebase/firebaseconfig';
 import { doc, setDoc } from 'firebase/firestore';
 
-const InversionistaForm = () => {
+const InversionistaForm = ({ navigation }) => {
   const [nombre1, setNombre1] = useState('');
   const [nombre2, setNombre2] = useState('');
   const [apellido1, setApellido1] = useState('');
   const [apellido2, setApellido2] = useState('');
   const [cedula, setCedula] = useState('');
-  const [correo, setCorreo] = useState('');
+  const [genero, setGenero] = useState('');
+  const [fecha_nac, setFechaNac] = useState('');
   const [localidad, setLocalidad] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [preferencia, setPreferencia] = useState('');
   const [foto_perfil, setFotoPerfil] = useState(null);
 
-  const validarCedula = (text) => {
-    const regex = /^[0-9]{3}-[0-9]{6}-[0-9]{4}[A-Za-z]$/; // 15 caracteres incluyendo guiones
-    return regex.test(text);
+  // Valida que la cédula tenga el formato correcto
+  const validarCedula = () => {
+    const cedulaRegex = /^\d{3}-\d{6}-\d{4}[A-Za-z]$/;
+    return cedulaRegex.test(cedula);
   };
 
-  const formatearCedula = (text) => {
-    let newText = text.replace(/[^0-9A-Za-z]/g, '');
-
-    // Añade los guiones automáticamente según la longitud
-    if (newText.length > 3) newText = `${newText.slice(0, 3)}-${newText.slice(3)}`;
-    if (newText.length > 11) newText = `${newText.slice(0, 11)}-${newText.slice(11)}`;
-
-    setCedula(newText);
+  // Formatea la cédula automáticamente mientras se escribe
+  const handleCedulaChange = (text) => {
+    let cleaned = text.replace(/[^0-9A-Za-z]/g, '');
+    const digits = cleaned.slice(0, 13);
+    const letter = cleaned.slice(13, 14).toUpperCase();
+    let formattedDigits = digits.replace(/(\d{3})(\d{6})(\d{4})/, '$1-$2-$3');
+    const formattedCedula = letter ? `${formattedDigits}${letter}` : formattedDigits;
+    setCedula(formattedCedula);
   };
 
+  // Limpia todos los campos del formulario
   const limpiarCampos = () => {
     setNombre1('');
     setNombre2('');
     setApellido1('');
     setApellido2('');
     setCedula('');
-    setCorreo('');
+    setGenero('');
+    setFechaNac('');
     setLocalidad('');
+    setDescripcion('');
+    setPreferencia('');
     setFotoPerfil(null);
   };
 
+  // Guarda el inversionista en Firebase
   const guardarInversionista = async () => {
-    if (!nombre1 || !apellido1 || !cedula || !correo || !localidad) {
+    if (!nombre1 || !apellido1 || !apellido2 || !cedula || !genero || !fecha_nac || !localidad || !descripcion || !preferencia) {
       Alert.alert("Error", "Por favor completa todos los campos requeridos.");
       return;
     }
 
-    if (!validarCedula(cedula)) {
+    if (!validarCedula()) {
       Alert.alert("Error", "La cédula no es válida, debe tener 15 caracteres incluyendo guiones.");
       return;
     }
 
     try {
-      // Genera un ID único automáticamente (puedes personalizar la lógica aquí)
-      const id_Usuario = Date.now().toString(); // Usar timestamp como ID único
+      // Genera un ID único para el usuario
+      const usuarios = Date.now().toString();
 
-      await setDoc(doc(db, "inversionistas", id_Usuario), {
+      // Guarda los datos en Firestore
+      await setDoc(doc(db, "inversionistas", id_usuario), {
+        id_usuario: id_usuario, 
         nombre1,
         nombre2,
         apellido1,
         apellido2,
         cedula,
-        correo,
+        genero,
+        fecha_nac,
         localidad,
+        descripcion,
+        preferencia,
         foto_perfil,
       });
-      Alert.alert("Éxito", "Inversionista guardado con éxito!");
 
-      limpiarCampos();
+      Alert.alert("Inversionista guardado con éxito!");
+      limpiarCampos(); // Limpia los campos después de guardar
+      navigation.navigate('InversionistaDashboard'); // Redirige al dashboard del inversionista
     } catch (error) {
       console.error("Error al guardar inversionista:", error);
-      Alert.alert("Error", "Hubo un error al guardar el inversionista.");
+      Alert.alert("Hubo un error al guardar el inversionista.");
     }
   };
 
+  // Permite al usuario seleccionar una foto de perfil desde la galería
   const seleccionarFoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert("Permiso requerido", "Se necesita permiso para acceder a la galería.");
+      Alert.alert("Se necesita permiso para acceder a la galería.");
       return;
     }
 
@@ -89,7 +106,7 @@ const InversionistaForm = () => {
     });
 
     if (!result.canceled) {
-      setFotoPerfil(result.assets[0].uri);
+      setFotoPerfil(result.assets[0].uri); // Guarda la URI de la imagen
     }
   };
 
@@ -97,12 +114,12 @@ const InversionistaForm = () => {
     <ScrollView contentContainerStyle={styles.container}>
       {foto_perfil && (
         <Image
-          source={{ uri: foto_perfil }} 
-          style={styles.fotoPerfil} 
+          source={{ uri: foto_perfil }}
+          style={styles.fotoPerfil}
         />
       )}
-      <TouchableOpacity style={styles.button} onPress={seleccionarFoto}>
-        <Text style={styles.buttonText}>Seleccionar Foto</Text>
+      <TouchableOpacity onPress={seleccionarFoto}>
+        <Text style={styles.selectPhotoText}>Seleccionar Foto de Perfil</Text>
       </TouchableOpacity>
 
       <Text style={styles.label}>Primer Nombre:</Text>
@@ -121,16 +138,50 @@ const InversionistaForm = () => {
       <TextInput
         style={styles.input}
         value={cedula}
-        onChangeText={formatearCedula}
-        placeholder="000-000000-0000#"
-        maxLength={15} 
+        onChangeText={handleCedulaChange}
+        placeholder="000-000000-0000Z"
+        keyboardType="default"
+        maxLength={16}
       />
 
-      <Text style={styles.label}>Correo:</Text>
-      <TextInput style={styles.input} value={correo} onChangeText={setCorreo} />
+      <Text style={styles.label}>Género:</Text>
+      <Picker
+        selectedValue={genero}
+        style={styles.input}
+        onValueChange={(itemValue) => setGenero(itemValue)}
+      >
+        <Picker.Item label="Femenino" value="Femenino" />
+        <Picker.Item label="Masculino" value="Masculino" />
+      </Picker>
+
+      <Text style={styles.label}>Fecha de Nacimiento:</Text>
+      <TextInput
+        style={styles.input}
+        value={fecha_nac}
+        onChangeText={setFechaNac}
+        placeholder="YYYY-MM-DD"
+      />
 
       <Text style={styles.label}>Localidad:</Text>
       <TextInput style={styles.input} value={localidad} onChangeText={setLocalidad} />
+
+      <Text style={styles.label}>Descripción:</Text>
+      <TextInput style={styles.input} value={descripcion} onChangeText={setDescripcion} />
+
+      <Text style={styles.label}>Preferencias:</Text>
+      <Picker
+        selectedValue={preferencia}
+        style={styles.input}
+        onValueChange={(itemValue) => setPreferencia(itemValue)}
+      >
+        <Picker.Item label="Ganadería y Agropecuario" value="Ganadería y Agropecuario" />
+        <Picker.Item label="Tecnología" value="Tecnología" />
+        <Picker.Item label="Salud" value="Salud" />
+        <Picker.Item label="Bienes Raíces y Construcción Sostenible" value="Bienes Raíces y Construcción Sostenible" />
+        <Picker.Item label="Alimentación y Bebidas Innovadoras" value="Alimentación y Bebidas Innovadoras" />
+        <Picker.Item label="Entretenimiento y Medios Digitales" value="Entretenimiento y Medios Digitales" />
+        <Picker.Item label="Moda y Textiles" value="Moda y Textiles" />
+      </Picker>
 
       <TouchableOpacity style={styles.button} onPress={guardarInversionista}>
         <Text style={styles.buttonText}>Registrarse</Text>
@@ -172,23 +223,28 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    marginBottom: 20,
-    borderColor: '#FFD700',
-    borderWidth: 3,
+    marginBottom: 10,
+  },
+  selectPhotoText: {
+    color: '#005EB8',
+    fontWeight: 'bold',
+    fontFamily: 'TW CEN MT',
+    marginBottom: 10,
   },
   button: {
-    backgroundColor: '#FFD700',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 5,
-    marginTop: 20,
+    backgroundColor: '#005EB8',
+    padding: 10,
+    borderRadius: 8,
+    marginVertical: 10,
+    width: '90%',
   },
   buttonText: {
-    fontSize: 16,
-    color: '#005EB8',
-    fontFamily: 'TW CEN MT',
+    color: '#FFFFFF',
     textAlign: 'center',
+    fontFamily: 'TW CEN MT',
+    fontSize: 16,
   },
 });
 
 export default InversionistaForm;
+

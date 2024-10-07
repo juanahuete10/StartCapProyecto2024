@@ -1,96 +1,152 @@
-// Registro.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../firebase/firebaseconfig'; // Importar auth desde firebaseconfig
-import { setDoc, doc } from 'firebase/firestore';
+import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function Registro({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Expresión regular para validar un correo electrónico
   const validarEmail = (email) => {
     const regex = /\S+@\S+\.\S+/;
     return regex.test(email);
   };
 
   const registrarUsuario = async () => {
-    // Validar el formato del correo electrónico
+    const auth = getAuth();
+
     if (!email || !validarEmail(email)) {
-      alert('Por favor, introduce un correo electrónico válido.');
+      Alert.alert('Error', 'Por favor, introduce un correo electrónico válido.');
       return;
     }
 
-    // Validar que la contraseña no esté vacía o sea demasiado corta
     if (!password || password.length < 6) {
-      alert('Por favor, introduce una contraseña de al menos 6 caracteres.');
+      Alert.alert('Error', 'Por favor, introduce una contraseña de al menos 6 caracteres.');
       return;
     }
 
     try {
-      // Crear el usuario con email y contraseña
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Opcional: Puedes guardar información adicional del usuario en Firestore
-      // await setDoc(doc(db, "users", userCredential.user.uid), {
-      //   email: email,
-      //   createdAt: new Date(),
-      // });
+      const user = userCredential.user;
 
-      alert('Usuario registrado con éxito!');
-      
-      // Redirigir a la pantalla principal (Home)
-      navigation.navigate('Home');
+      // Navega a la pantalla de Selección de Perfil, pasando el userId
+      navigation.navigate('SeleccionPerfil', { userId: user.uid });
     } catch (error) {
       console.error('Error al registrar:', error.code, error.message);
-      if (error.code === 'auth/invalid-email') {
-        alert('El formato del correo electrónico no es válido.');
-      } else if (error.code === 'auth/email-already-in-use') {
-        alert('El correo electrónico ya está en uso.');
-      } else {
-        alert('Error al registrar: ' + error.message);
-      }
+      Alert.alert('Error', 'Error al registrar: ' + error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registro</Text>
+      <Image 
+        style={styles.logo} 
+        source={require('../assets/icon/StartCap.png')} 
+      />
+      <Text style={styles.title}>Crear una cuenta</Text>
+      <Text style={styles.subtitle}>Por favor, llena los siguientes campos</Text>
+      
       <TextInput
         placeholder="Correo electrónico"
         value={email}
-        onChangeText={(text) => setEmail(text.trim())} // Eliminar espacios adicionales
+        onChangeText={(text) => setEmail(text.trim())}
         style={styles.input}
         keyboardType="email-address"
-        autoCapitalize="none"
+        placeholderTextColor="#B0BEC5"
       />
+
       <TextInput
         placeholder="Contraseña"
         value={password}
         onChangeText={setPassword}
         style={styles.input}
         secureTextEntry
+        placeholderTextColor="#B0BEC5"
       />
-      <Button title="Registrarse" onPress={registrarUsuario} />
+
+      <TouchableOpacity style={styles.button} onPress={registrarUsuario}>
+        <Text style={styles.buttonText}>Registrarse</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.infoText}>
+        ¿Ya tienes una cuenta? 
+        <Text style={styles.linkText} onPress={() => navigation.navigate('Login')}> Inicia sesión</Text>
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F7F9FC',
     padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  logo: {
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
     marginBottom: 20,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#003366',
+    fontFamily: 'TW CEN MT',
     marginBottom: 10,
-    borderRadius: 5,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#607D8B',
+    fontFamily: 'TW CEN MT',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  input: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#fff',
+    borderColor: '#B0BEC5',
+    borderWidth: 1,
+    borderRadius: 25,
+    paddingLeft: 20,
+    fontSize: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    fontFamily: 'TW CEN MT',
+  },
+  button: {
+    width: '100%',
+    backgroundColor: '#FFD700',
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginTop: 10,
+    shadowColor: '#FFD700',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#003366',
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'TW CEN MT',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#607D8B',
+    marginTop: 20,
+    fontFamily: 'TW CEN MT',
+  },
+  linkText: {
+    color: '#007bff',
+    fontWeight: 'bold',
   },
 });
+
