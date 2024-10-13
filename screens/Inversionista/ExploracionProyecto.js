@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity } from 'react-native';
-import { db } from '../firebase/firebaseconfig';
+import { db } from '../../firebase/firebaseconfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function ExploracionProyecto() {

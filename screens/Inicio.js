@@ -3,50 +3,78 @@ import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, TextInput } 
 import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../firebase/firebaseconfig';
 
-export default function Inicio({ navigation, emprendedorId }) { // Asumiendo que recibes el ID del emprendedor como props
+export default function Inicio({ navigation, route }) {
   const [proyectos, setProyectos] = useState([]);
   const [filtro, setFiltro] = useState('');
+  const [id_emprendedor, setIdEmprendedor] = useState(null);
 
+  useEffect(() => {
+    // Verificar si route.params y route.params.id_emprendedor están definidos
+    if (route.params && route.params.id_emprendedor) {
+      setIdEmprendedor(route.params.id_emprendedor);
+      console.log('Emprendedor ID:', route.params.id_emprendedor);
+    } else {
+      console.error("El ID del emprendedor no está definido en route.params.");
+    }
+  }, [route.params]);
+
+  // Cargar proyectos al montar el componente o cuando cambie el filtro
   const cargarProyectos = async () => {
-    // Filtramos por el ID del emprendedor y el sector si está definido
-    const q = filtro
-      ? query(collection(db, 'proyectos'), where('id_emprend', '==', emprendedorId), where('sector', '==', filtro))
-      : query(collection(db, 'proyectos'), where('id_emprend', '==', emprendedorId));
-    
-    const querySnapshot = await getDocs(q);
-    const proyectosData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setProyectos(proyectosData);
+    if (!id_emprendedor) {
+      console.error("El ID del emprendedor no está definido");
+      return; // Salir si el ID no está definido
+    }
+
+    try {
+      // Si hay filtro, añadir la condición de categoría, si no, cargar todos los proyectos del emprendedor
+      const q = filtro
+        ? query(collection(db, 'proyectos'), where('id_emprendedor', '==', id_emprendedor), where('categoria', '==', filtro)) 
+        : query(collection(db, 'proyectos'), where('id_emprendedor', '==', id_emprendedor));
+
+      const querySnapshot = await getDocs(q);
+      const proyectosData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setProyectos(proyectosData);
+    } catch (error) {
+      console.error("Error cargando proyectos:", error);
+    }
   };
 
   useEffect(() => {
     cargarProyectos();
-  }, [filtro]);
+  }, [filtro, id_emprendedor]);
 
-  // Función para manejar el 'Me encanta'
+  // Manejo del botón "Me encanta"
   const handleMeEncanta = async (id, likes) => {
     const proyectoRef = doc(db, 'proyectos', id);
-    await updateDoc(proyectoRef, { likes: likes + 1 });
-    cargarProyectos(); // Volver a cargar los proyectos después de actualizar
+    try {
+      await updateDoc(proyectoRef, { likes: likes + 1 }); // Incrementar likes
+      const updatedProyectos = proyectos.map((proyecto) =>
+        proyecto.id === id ? { ...proyecto, likes: likes + 1 } : proyecto
+      );
+      setProyectos(updatedProyectos);
+    } catch (error) {
+      console.error("Error al dar 'me encanta':", error);
+    }
   };
 
-  // Función para navegar al chat con el emprendedor
-  const handleChat = (emprendedorId) => {
-    navigation.navigate('Chat', { emprendedorId });
+  // Navegar al chat
+  const handleChat = (id_emprendedor) => {
+    navigation.navigate('Chat', { id_emprendedor });
   };
 
-  // Renderiza cada proyecto en la lista
+  // Renderizar cada proyecto
   const renderProyecto = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Image source={{ uri: item.emprendedorFoto }} style={styles.avatar} />
-        <Text style={styles.emprendedorNombre}>{item.emprendedorNombre}</Text>
+        <Image source={{ uri: item.foto_perfil }} style={styles.avatar} />
+        <Text style={styles.emprendedorNombre}>{item.nombre}</Text>
       </View>
       <Text style={styles.proyectoDescripcion}>{item.descripcion}</Text>
       <View style={styles.footer}>
         <TouchableOpacity onPress={() => handleMeEncanta(item.id, item.likes)}>
           <Text style={styles.iconText}>❤️ {item.likes}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleChat(item.id_emprend)}>
+        <TouchableOpacity onPress={() => handleChat(item.id_emprendedor)}>
           <Text style={styles.iconText}>💬 Chat</Text>
         </TouchableOpacity>
       </View>
@@ -59,12 +87,13 @@ export default function Inicio({ navigation, emprendedorId }) { // Asumiendo que
         style={styles.input}
         placeholder="Filtrar por sector"
         value={filtro}
-        onChangeText={setFiltro}
+        onChangeText={setFiltro} // Actualizar filtro al escribir
       />
       <FlatList
         data={proyectos}
         renderItem={renderProyecto}
         keyExtractor={(item) => item.id}
+        ListEmptyComponent={<Text>No se encontraron proyectos</Text>} // Mostrar mensaje si no hay proyectos
       />
     </View>
   );
@@ -73,8 +102,8 @@ export default function Inicio({ navigation, emprendedorId }) { // Asumiendo que
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f9fc',
     padding: 20,
+    backgroundColor: '#F7F9FC',
   },
   input: {
     height: 40,
@@ -123,6 +152,6 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 16,
-    color: '#ff6347', // Color para 'Me encanta' y 'Chat'
+    color: '#ff6347',
   },
 });

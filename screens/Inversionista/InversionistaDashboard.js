@@ -3,14 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from 'react
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { getFirestore, collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 
-
 const firestore = getFirestore();
 
 export default function InversionistaDashboard({ navigation }) {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    
     const fetchProjects = async () => {
       const querySnapshot = await getDocs(collection(firestore, 'projects'));
       const projectsList = [];
@@ -35,7 +33,6 @@ export default function InversionistaDashboard({ navigation }) {
   const renderProject = ({ item }) => (
     <View style={styles.projectCard}>
       <View style={styles.projectHeader}>
-      
         <Image source={{ uri: item.profileImage }} style={styles.avatar} />
         <Text style={styles.projectAuthor}>{item.authorName}</Text>
       </View>
@@ -43,12 +40,18 @@ export default function InversionistaDashboard({ navigation }) {
       <View style={styles.projectFooter}>
         <TouchableOpacity onPress={() => handleMeEncanta(item.id, item.likes)}>
           <View style={styles.likesContainer}>
-            <MaterialCommunityIcons name="heart-outline" size={24} color="gray" />
+            <MaterialCommunityIcons name="heart" size={24} color="#E63946" />
             <Text style={styles.likesText}>{item.likes} Me encanta</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => handleNavigation('Chat', { emprendedorId: item.emprendedorId })}>
-          <Text style={styles.chatText}>💬 Ver más</Text>
+          <View style={styles.chatContainer}>
+            <MaterialCommunityIcons name="message" size={24} color="#1E90FF" />
+            <Text style={styles.chatText}>Ver más</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('InversionistaPerfil', { userId: item.id })}>
+          <Text style={styles.profileLink}>Ver perfil</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -56,35 +59,33 @@ export default function InversionistaDashboard({ navigation }) {
 
   return (
     <View style={styles.container}>
-     
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Inicio')}>
-          <MaterialCommunityIcons name="home-outline" size={28} color="#003366" />
+          <MaterialCommunityIcons name="home-outline" size={32} color="#003366" />
           <Text style={styles.navText}>Inicio</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Busqueda')}>
-          <MaterialCommunityIcons name="magnify" size={28} color="#003366" />
+          <MaterialCommunityIcons name="magnify" size={32} color="#003366" />
           <Text style={styles.navText}>Búsqueda</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Chats')}>
-          <MaterialCommunityIcons name="message-outline" size={28} color="#003366" />
+          <MaterialCommunityIcons name="message-outline" size={32} color="#003366" />
           <Text style={styles.navText}>Chats</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Notificaciones')}>
-          <MaterialCommunityIcons name="bell-outline" size={28} color="#003366" />
+          <MaterialCommunityIcons name="bell-outline" size={32} color="#003366" />
           <Text style={styles.navText}>Notificaciones</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('InversionistaPerfil')}>
-          <MaterialCommunityIcons name="account-outline" size={28} color="#003366" />
+          <MaterialCommunityIcons name="account-outline" size={32} color="#003366" />
           <Text style={styles.navText}>Perfil</Text>
         </TouchableOpacity>
       </View>
 
-     
       <FlatList
         data={projects}
         renderItem={renderProject}
@@ -144,12 +145,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  chatContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   likesText: {
     marginLeft: 5,
     color: '#666666',
     fontSize: 14,
   },
   chatText: {
+    color: '#1E90FF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  profileLink: {
     color: '#1E90FF',
     fontSize: 14,
     fontWeight: 'bold',

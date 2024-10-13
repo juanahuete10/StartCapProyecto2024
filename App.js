@@ -7,12 +7,12 @@ import Home from './screens/Home';
 import Login from './screens/Login';
 import SeleccionPerfil from './screens/SeleccionPerfil'; 
 import Registro from './screens/Registro';
-import InversionistaForm from './Frontend-StartCap/InversionistaForm'; 
-import InversionistaPerfil from './screens/InversionistaPerfil'; 
-import Notificaciones from './screens/Notificaciones';
-import InversionistaDashboard from './screens/InversionistaDashboard';
-import Chats from './screens/Chats';
-import ExploracionProyecto from './screens/ExploracionProyecto';
+import InversionistaForm from './screens/Inversionista/InversionistaForm'; 
+import InversionistaPerfil from './screens/Inversionista/InversionistaPerfil'; 
+import Notificaciones from './screens/Inversionista/Notificaciones';
+import InversionistaDashboard from './screens/Inversionista/InversionistaDashboard';
+import Chats from './screens/Inversionista/Chats';
+import ExploracionProyecto from './screens/Inversionista/ExploracionProyecto';
 import EmprendedorForm from './screens/Emprendedor/EmprendedorForm';
 import EmprendedorDashboard from './screens/Emprendedor/EmprendedorDashboard'
 import Inicio from './screens/Inicio';
@@ -20,6 +20,7 @@ import AdminForm from './screens/Administrador/AdminForm';
 import AdminDashboard from './screens/Administrador/AdminDashboard'
 import AdminPerfil from './screens/Administrador/AdminPerfil';
 import Proyectos from './screens/Emprendedor/Proyectos';
+
 
 
 const Stack = createStackNavigator();
@@ -45,7 +46,7 @@ export default function App() {
         <Stack.Screen name="Inicio" component={Inicio} />
         <Stack.Screen name="AdminPerfil" component={AdminPerfil} />
         <Stack.Screen name="Proyectos" component={Proyectos} />
-
+     
       </Stack.Navigator>
     </NavigationContainer>
   );

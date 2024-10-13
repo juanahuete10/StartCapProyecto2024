@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, setDoc, doc } from 'firebase/firestore'; // Importa Firestore
 
 export default function Registro({ navigation }) {
   const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ export default function Registro({ navigation }) {
 
   const registrarUsuario = async () => {
     const auth = getAuth();
+    const db = getFirestore(); // Inicializa Firestore
 
     if (!email || !validarEmail(email)) {
       Alert.alert('Error', 'Por favor, introduce un correo electrónico válido.');
@@ -28,6 +30,12 @@ export default function Registro({ navigation }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Guarda el rol del usuario en Firestore
+      await setDoc(doc(db, 'usuarios', user.uid), {
+        email: user.email,
+        rol: 'Inversionista', // O el rol que necesites asignar
+      });
+
       // Navega a la pantalla de Selección de Perfil, pasando el userId
       navigation.navigate('SeleccionPerfil', { userId: user.uid });
     } catch (error) {
@@ -40,7 +48,7 @@ export default function Registro({ navigation }) {
     <View style={styles.container}>
       <Image 
         style={styles.logo} 
-        source={require('../assets/icon/StartCap.png')} 
+        source={require('../assets/icon/LogoStartCap.png')} 
       />
       <Text style={styles.title}>Crear una cuenta</Text>
       <Text style={styles.subtitle}>Por favor, llena los siguientes campos</Text>
@@ -149,4 +157,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-

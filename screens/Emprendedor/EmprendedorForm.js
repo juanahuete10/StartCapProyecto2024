@@ -1,20 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { db, storage } from '../../firebase/firebaseconfig'; 
+import { View, Text, TextInput, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import * as ImagePicker from 'expo-image-picker';
+import { db, auth, storage } from '../../firebase/firebaseconfig'; 
 import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-const EmprendedorForm = () => {
+const EmprendedorForm = ({ navigation }) => {
   const [nombres, setNombres] = useState('');
   const [apellidos, setApellidos] = useState('');
-  const [fecha_nac, setFecha_nac] = useState('');
+  const [fecha_nac, setFechaNac] = useState(new Date());
   const [cedula, setCedula] = useState('');
-  const [genero, setGenero] = useState([]); 
+  const [genero, setGenero] = useState('');
   const [localidad, setLocalidad] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [fotoPerfil, setFotoPerfil] = useState(null); 
-  const [loading, setLoading] = useState(false); 
+  const [fotoPerfil, setFotoPerfil] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const validarCedula = () => {
+    const cedulaRegex = /^\d{3}-\d{6}-\d{4}[A-Za-z]$/;
+    return cedulaRegex.test(cedula);
+  };
+
+  const handleCedulaChange = (text) => {
+    let cleaned = text.replace(/[^0-9A-Za-z]/g, '');
+    const digits = cleaned.slice(0, 13);
+    const letter = cleaned.slice(13, 14).toUpperCase();
+    let formattedDigits = digits.replace(/(\d{3})(\d{6})(\d{4})/, '$1-$2-$3');
+    const formattedCedula = letter ? `${formattedDigits}${letter}` : formattedDigits;
+    setCedula(formattedCedula);
+  };
 
   useEffect(() => {
     (async () => {
@@ -26,60 +43,38 @@ const EmprendedorForm = () => {
   }, []);
 
   const pickImage = async () => {
-    try {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1], 
-        quality: 1,
-      });
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
 
-      if (!result.canceled) {
-        setFotoPerfil(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error("Error al seleccionar imagen:", error);
-      Alert.alert('Error', 'Hubo un problema al seleccionar la imagen.');
+    if (!result.canceled) {
+      setFotoPerfil(result.assets[0].uri);
     }
   };
 
   const uploadImage = async (uri) => {
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const storageRef = ref(storage, `fotosPerfil/${Date.now()}.jpg`); 
-      await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(storageRef);
-      return downloadURL;
-    } catch (error) {
-      console.error("Error al subir imagen:", error);
-      Alert.alert('Error', 'Hubo un problema al subir la imagen.');
-      return null;
-    }
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const storageRef = ref(storage, `fotosPerfil/${Date.now()}.jpg`);
+    await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
   };
+ 
 
-  const validarCedula = () => {
-    const cedulaRegex = /^\d{3}-\d{6}-\d{4}[A-Za-z]$/;  
-    return cedulaRegex.test(cedula);
-  };
-
-  const handleCedulaChange = (text) => {
-    const formattedText = text
-      .replace(/\D/g, '')                
-      .replace(/(\d{3})(\d{6})(\d{4})/, '$1-$2-$3');  
-
-    setCedula(formattedText + text.slice(13).toUpperCase());  
-  };
 
   const getNewUserId = async () => {
     const emprendedoresSnapshot = await getDocs(collection(db, "emprendedores"));
-    const count = emprendedoresSnapshot.size + 1;  
-    return count;  
+    const count = emprendedoresSnapshot.size + 1;
+    return count;
   };
 
   const guardarEmprendedor = async () => {
     if (!validarCedula()) {
-      Alert.alert("Cédula Inválida", "Por favor, ingresa una cédula válida con el formato correcto");
+      Alert.alert("Cédula Inválida", "Por favor, ingresa una cédula válida con el formato correcto (000-000000-0000Z)");
       return;
     }
 
@@ -95,29 +90,26 @@ const EmprendedorForm = () => {
         }
       }
 
-      const newUserId = await getNewUserId();  
+      const newUserId = await getNewUserId();
 
-      await setDoc(doc(db, "emprendedores", String(newUserId)), {
-        id_usuario: newUserId,
-        nombres: nombres,
-        apellidos: apellidos,
-        fecha_nac: fecha_nac,
-        cedula: cedula,
-        genero: genero.join(', '), 
-        localidad: localidad,
-        descripcion: descripcion,
-        foto_perfil_url: uploadedURL || '', 
+      await setDoc(doc(db, "emprendedores", String(newUserId)), { 
+        id_emprendedor: newUserId,
+        nombres,
+        apellidos,
+        fecha_nac: fecha_nac.toISOString().split('T')[0],
+        cedula,
+        genero,
+        correo: auth.currentUser.email, // Cambiado a "correo" según tu estructura
+        localidad,
+        descripcion,
+        foto_perfil: uploadedURL || '', // Cambiado a "foto_perfil" según tu estructura
+        rol: 'Emprendedor', 
+        email: auth.currentUser.email
       });
 
       Alert.alert("Éxito", "Emprendedor guardado correctamente!");
-      setNombres('');
-      setApellidos('');
-      setFecha_nac('');
-      setCedula('');
-      setGenero([]); 
-      setLocalidad('');
-      setDescripcion('');
-      setFotoPerfil(null);
+      limpiarCampos();
+      navigation.navigate('EmprendedorDashboard');
     } catch (error) {
       console.error("Error al guardar emprendedor:", error);
       Alert.alert("Error", "Hubo un problema al guardar el emprendedor.");
@@ -126,18 +118,25 @@ const EmprendedorForm = () => {
     }
   };
 
-  const toggleGenero = (value) => {
-    if (genero.includes(value)) {
-      setGenero(genero.filter((item) => item !== value));
-    } else {
-      setGenero([...genero, value]);
-    }
+  const limpiarCampos = () => {
+    setNombres('');
+    setApellidos('');
+    setFechaNac(new Date());
+    setCedula('');
+    setGenero('');
+    setLocalidad('');
+    setDescripcion('');
+    setFotoPerfil(null);
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || fecha_nac;
+    setShowDatePicker(false);
+    setFechaNac(currentDate);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Registro de Emprendedor</Text>
-
       <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
         {fotoPerfil ? (
           <Image
@@ -149,7 +148,6 @@ const EmprendedorForm = () => {
         )}
       </TouchableOpacity>
 
-      {/* Campos de texto */}
       <Text style={styles.label}>Nombres:</Text>
       <TextInput
         style={styles.input}
@@ -167,12 +165,17 @@ const EmprendedorForm = () => {
       />
 
       <Text style={styles.label}>Fecha de Nacimiento:</Text>
-      <TextInput
-        style={styles.input}
-        value={fecha_nac}
-        onChangeText={setFecha_nac}
-        placeholder="YYYY-MM-DD"
-      />
+      <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
+        <Text>{fecha_nac.toISOString().split('T')[0]}</Text>
+      </TouchableOpacity>
+      {showDatePicker && (
+        <DateTimePicker
+          value={fecha_nac}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
 
 <Text style={styles.label}>Cédula:</Text>
       <TextInput
@@ -183,26 +186,16 @@ const EmprendedorForm = () => {
         keyboardType="default"
         maxLength={16}
       />
-
       <Text style={styles.label}>Género:</Text>
-      <View style={styles.genderContainer}>
-        <TouchableOpacity
-          style={[styles.genderOption, genero.includes('masculino') && styles.selectedGender]}
-          onPress={() => toggleGenero('masculino')}
-        >
-          <Text>Masculino</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.genderOption, genero.includes('femenino') && styles.selectedGender]}
-          onPress={() => toggleGenero('femenino')}
-        >
-          <Text>Femenino</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-        >
-        
-        </TouchableOpacity>
-      </View>
+      <Picker
+        selectedValue={genero}
+        style={styles.input}
+        onValueChange={(itemValue) => setGenero(itemValue)}
+      >
+        <Picker.Item label="Selecciona un género" value="" />
+        <Picker.Item label="Femenino" value="Femenino" />
+        <Picker.Item label="Masculino" value="Masculino" />
+      </Picker>
 
       <Text style={styles.label}>Localidad:</Text>
       <TextInput
@@ -226,25 +219,19 @@ const EmprendedorForm = () => {
         <ActivityIndicator size="large" color="#007BFF" />
       ) : (
         <TouchableOpacity style={styles.button} onPress={guardarEmprendedor}>
-          <Text style={styles.buttonText}>Registrarse</Text>
+          <Text style={styles.buttonText}>Registrar Emprendedor</Text>
         </TouchableOpacity>
       )}
     </ScrollView>
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: '#F5F5F5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#007BFF',
+    backgroundColor: '#fff',
   },
   imageContainer: {
     alignItems: 'center',
@@ -253,42 +240,22 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 100,
     height: 100,
-    borderRadius: 50, // Estilo circular
+    borderRadius: 50,
   },
   imageText: {
-    fontSize: 16,
     color: '#007BFF',
-    textAlign: 'center',
+    textDecorationLine: 'underline',
   },
   label: {
-    marginBottom: 5,
     fontWeight: 'bold',
+    marginBottom: 5,
   },
   input: {
-    height: 40,
-    borderColor: '#007BFF',
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    backgroundColor: '#FFFFFF',
-  },
-  genderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  genderOption: {
-    borderColor: '#007BFF',
-    borderWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 5,
     padding: 10,
-    flex: 1,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  selectedGender: {
-    backgroundColor: '#007BFF',
+    marginBottom: 15,
   },
   textArea: {
     height: 100,
@@ -296,15 +263,14 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#007BFF',
-    paddingVertical: 15,
+    padding: 15,
     borderRadius: 5,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontWeight: 'bold',
   },
 });
 
 export default EmprendedorForm;
-

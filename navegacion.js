@@ -5,18 +5,22 @@ import { createStackNavigator } from '@react-navigation/stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import Home from './screens/Home';
-import Chats from './screens/Chats';
+import Chats from './screens/Inversionista/Chats';
 import SeleccionPerfil from './screens/SeleccionPerfil';
 import Registro from './screens/Registro';
-import InversionistaForm from './Frontend-StartCap/InversionistaForm';
-import Notificaciones from './screens/Notificaciones';
-import ExploracionProyecto from './screens/ExploracionProyecto';
+import InversionistaForm from './screens/Inversionista/InversionistaForm';
+import Notificaciones from './screens/Inversionista/Notificaciones';
+import ExploracionProyecto from './screens/Inversionista/ExploracionProyecto';
 import EmprendedorForm from './screens/Emprendedor/EmprendedorForm';
 import Inicio from './screens/Inicio';
 import AdminForm from './screens/Administrador/AdminForm';
 import AdminDashboard from './screens/Administrador/AdminDashboard'; // Asegúrate de importar AdminDashboard
 import AdminPerfil from './screens/Administrador/AdminPerfil';
 import Proyectos from './screens/Emprendedor/Proyectos';
+import InversionistaDashboard from './screens/Inversionista/InversionistaDashboard';
+import InversionistaPerfil from './screens/Inversionista/InversionistaPerfil';
+import Login from './screens/Login';
+;
 
 // Crear un Stack Navigator para las funcionalidades de administración
 const AdminStack = createStackNavigator();
@@ -84,11 +88,33 @@ function MyTabs() {
           ),
         }}
       />
+
+<Tab.Screen
+        name='Login'
+        component={Login}
+        options={{
+          tabBarLabel: 'Iniciar Sesión',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account-plus" size={size} color={color} />
+          ),
+        }}
+      />
+
       <Tab.Screen
         name='Registro'
         component={Registro}
         options={{
           tabBarLabel: 'Registro',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account-plus" size={size} color={color} />
+          ),
+        }}
+      />
+        <Tab.Screen
+        name='InversionistaDashboard'
+        component={InversionistaDashboard}
+        options={{
+          tabBarLabel: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="account-plus" size={size} color={color} />
           ),
@@ -116,6 +142,9 @@ function MyTabs() {
           ),
         }}
       />
+
+
+
       <Tab.Screen
         name='Notificaciones'
         component={Notificaciones}
@@ -124,6 +153,16 @@ function MyTabs() {
           tabBarLabel: 'Notificaciones',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="bell" size={size} color={color} />
+          ),
+        }}
+      />
+       <Tab.Screen
+        name='InversionistaPerfil'
+        component={InversionistaPerfil}
+        options={{
+          tabBarLabel: 'Perfil',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account" size={size} color={color} />
           ),
         }}
       />

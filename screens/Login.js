@@ -1,57 +1,72 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
-import { auth, firestore } from '../firebase/firebaseconfig'; 
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Alert } from 'react-native';
+import { auth, db } from '../firebase/firebaseconfig';  
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
-import { doc, getDoc } from 'firebase/firestore';
+import { query, collection, where, getDocs } from 'firebase/firestore'; 
 
 const Login = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const iniciarSesion = async () => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+  const handleSignIn = async () => { 
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor, completa todos los campos.');
+      return;
+    }
 
-      // Obtiene el rol del usuario desde Firestore
-      const userDoc = await getDoc(doc(firestore, 'usuarios', user.uid)); // Corrección aquí
-      if (userDoc.exists()) {
-        const { role } = userDoc.data();
+    try { 
+      const userCredential = await signInWithEmailAndPassword(auth, email, password); 
+      const user = userCredential.user; 
 
-        switch (role) {
+      const usersQuery = query(collection(db, 'usuarios'), where('email', '==', user.email)); 
+      const usersSnapshot = await getDocs(usersQuery); 
+
+      if (!usersSnapshot.empty) { 
+        const userData = usersSnapshot.docs[0].data(); 
+        const userRole = userData.rol;
+
+        // Navegar a la pantalla correspondiente según el rol
+        switch (userRole) {
           case 'Administrador':
-            navigation.navigate('AdminDashboard');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'AdminDashboard' }],
+            });
             break;
           case 'Emprendedor':
-            navigation.navigate('EmprendedorDashboard');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'EmprendedorDashboard', params: { emprendedorId: usersSnapshot.docs[0].id } }],
+            });
             break;
           case 'Inversionista':
-            navigation.navigate('InversionistaDashboard');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'InversionistaDashboard', params: { inversionistaId: usersSnapshot.docs[0].id } }],
+            });
             break;
           default:
-            alert('Rol de usuario desconocido.');
+            Alert.alert('Error', 'Rol de usuario desconocido.');
+            break;
         }
-      } else {
-        alert('Usuario no encontrado en Firestore.');
-      }
-    } catch (error) {
-      console.error("Error al iniciar sesión:", error.message);
-      alert(error.message);
-    }
-  };
+      } else { 
+        Alert.alert('Error', 'No se encontró información del usuario en la base de datos'); 
+      } 
 
-  const irARegistro = () => {
-    navigation.navigate('Registro'); // Asegúrate de que 'Registro' sea el nombre correcto de tu pantalla de registro
+      // Limpiar campos después del login
+      setEmail(''); 
+      setPassword(''); 
+    } catch (error) { 
+      console.error('Error de inicio de sesión:', error); 
+      Alert.alert('Error de inicio de sesión', 'Usuario o contraseña incorrectos'); 
+    } 
   };
 
   return (
     <View style={styles.container}>
-      <Image 
-        style={styles.logo} 
-        source={require('../assets/icon/StartCap.png')} 
-      />
+      <Image source={require('../assets/icon/LogoStartCap.png')} style={styles.logo} />
       <TextInput
         style={styles.input}
         placeholder="Correo electrónico"
@@ -67,11 +82,11 @@ const Login = () => {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <TouchableOpacity style={styles.button} onPress={iniciarSesion}>
+      <TouchableOpacity style={styles.button} onPress={handleSignIn}>
         <Text style={styles.buttonText}>Iniciar sesión</Text>
       </TouchableOpacity>
       <Text style={styles.infoText}>
-        ¿No tienes una cuenta? <Text style={styles.linkText} onPress={irARegistro}>Regístrate aquí</Text>
+        ¿No tienes una cuenta? <Text style={styles.linkText} onPress={() => navigation.navigate('Registro')}>Regístrate aquí</Text>
       </Text>
     </View>
   );
@@ -105,7 +120,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
-    fontFamily: 'TW CEN MT',
   },
   button: {
     width: '100%',
@@ -123,13 +137,11 @@ const styles = StyleSheet.create({
     color: '#003366',
     fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'TW CEN MT',
   },
   infoText: {
     fontSize: 14,
     color: '#607D8B',
     marginTop: 20,
-    fontFamily: 'TW CEN MT',
   },
   linkText: {
     color: '#007bff',
