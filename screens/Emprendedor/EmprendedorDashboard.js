@@ -1,36 +1,43 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ImageBackground } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, firestore } from '../../firebase/firebaseconfig'; // Importa Firebase
+import { auth, firestore } from '../../firebase/firebaseconfig';
 
 export default function EmprendedorDashboard({ navigation }) {
   const [formCompleted, setFormCompleted] = useState(false);
-  const [role, setRole] = useState(null); // Estado para almacenar el rol del usuario
+  const [rol, setRol] = useState(null);
 
   useEffect(() => {
     const checkFormStatus = async () => {
-      const value = await AsyncStorage.getItem('formCompleted');
-      setFormCompleted(value === 'true');
+      try {
+        const value = await AsyncStorage.getItem('formCompleted');
+        setFormCompleted(value === 'true');
+      } catch (error) {
+        Alert.alert('Error', 'No se pudo verificar el estado del formulario.');
+      }
     };
 
-    const fetchUserRole = async () => {
-      const user = auth.currentUser; // Obtiene el usuario actual
-      if (user) {
-        const userDoc = await firestore.collection('usuarios').doc(user.uid).get();
-        if (userDoc.exists) {
-          const { role } = userDoc.data();
-          setRole(role);
+    const fetchUserRol = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await firestore.collection('usuarios').doc(user.uid).get();
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            setRol(userData.rol);
+          }
         }
+      } catch (error) {
+        Alert.alert('Error', 'No se pudo obtener el rol del usuario.');
       }
     };
 
     checkFormStatus();
-    fetchUserRole(); // Llama a la función para obtener el rol del usuario
+    fetchUserRol();
   }, []);
 
   const handleNavigation = (screen) => {
-    console.log(`Navegando a: ${screen}`); 
     if (!formCompleted && screen !== 'EmprendedorForm') {
       navigation.navigate('EmprendedorForm');
     } else {
@@ -39,73 +46,67 @@ export default function EmprendedorDashboard({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Registro Emprendedor</Text>
+    <ImageBackground 
+      source={require('../../assets/icon/LogoStartCap.png')} 
+      style={styles.backgroundImage}
+      resizeMode="contain" 
+    >
+      {/* Barra de título en la parte superior */}
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>StartCap, Tu mejor opción</Text>
+      </View>
+
+      {/* Barra de botones al fondo */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('EmprendedorForm')}>
-          <MaterialCommunityIcons name="form-textbox" size={30} color="#0e5575" />
-          <Text style={styles.buttonText}>Registro</Text>
+        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Proyectos')}>
+          <MaterialCommunityIcons name="file-plus" size={30} color="#0e5575" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Proyectos')}>
-          <MaterialCommunityIcons name="projects" size={30} color="#0e5575" />
-          <Text style={styles.buttonText}>Proyectos</Text>
-        </TouchableOpacity>
-        
         <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Notificaciones')}>
           <MaterialCommunityIcons name="bell-outline" size={30} color="#0e5575" />
-          <Text style={styles.buttonText}>Notificaciones</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Chats')}>
           <MaterialCommunityIcons name="chat-outline" size={30} color="#0e5575" />
-          <Text style={styles.buttonText}>Chats</Text>
         </TouchableOpacity>
 
-        {role === 'emprendedor' && (
+        {rol === 'emprendedor' && (
           <TouchableOpacity style={styles.button} onPress={() => handleNavigation('EmprendedorDashboard')}>
             <MaterialCommunityIcons name="view-dashboard" size={30} color="#0e5575" />
-            <Text style={styles.buttonText}>Mi Dashboard</Text>
           </TouchableOpacity>
         )}
-
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  backgroundImage: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+  },
+  titleContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 50, 
+    paddingBottom: 20, 
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
     color: '#0e5575',
   },
   buttonContainer: {
-    flexDirection: 'column',
+    flexDirection: 'row', 
     width: '100%',
-    alignItems: 'center',
+    justifyContent: 'space-around', 
+    position: 'absolute', 
+    bottom: 20, 
   },
   button: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f2994a',
+    backgroundColor: 'transparent', 
     padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
-    width: '80%',
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    marginLeft: 10,
   },
 });
-

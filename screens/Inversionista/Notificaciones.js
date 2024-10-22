@@ -1,44 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
-import firestore from '@react-native-firebase/firestore'; // Asegúrate de importar firestore correctamente
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Alert } from 'react-native';
+import { db } from '../../firebase/firebaseconfig'; // Asegúrate de tener tu archivo de configuración de Firebase
+import { collection, onSnapshot } from 'firebase/firestore';
 
 const Notificaciones = () => {
-  const [loading, setLoading] = useState(true);
   const [notificaciones, setNotificaciones] = useState([]);
 
   useEffect(() => {
-    // Función para obtener las notificaciones desde Firestore
-    const obtenerNotificaciones = firestore()
-      .collection('notificaciones') // Asegúrate de que tienes una colección llamada 'notificaciones'
-      .onSnapshot(snapshot => {
-        const nuevasNotificaciones = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+    const unsubscribe = onSnapshot(collection(db, 'notificaciones'), (snapshot) => {
+      const nuevaLista = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setNotificaciones(nuevaLista);
+    }, (error) => {
+      Alert.alert('Error', 'No se pudieron cargar las notificaciones.');
+      console.error("Error al cargar notificaciones:", error);
+    });
 
-        setNotificaciones(nuevasNotificaciones);
-        setLoading(false);
-      });
-
-    // Limpiar la suscripción al desmontar el componente
-    return () => obtenerNotificaciones();
+    // Limpieza del efecto para evitar fugas de memoria
+    return () => unsubscribe();
   }, []);
 
-  if (loading) {
-    return <Text>Cargando notificaciones...</Text>;
-  }
+  const renderNotificacion = ({ item }) => (
+    <View style={styles.notificacionContainer}>
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.message}>{item.message}</Text>
+    </View>
+  );
 
   return (
-    <View>
-      {notificaciones.length > 0 ? (
-        notificaciones.map((notificacion) => (
-          <Text key={notificacion.id}>{notificacion.contenido}</Text>
-        ))
-      ) : (
-        <Text>No hay notificaciones</Text>
-      )}
+    <View style={styles.container}>
+      <FlatList
+        data={notificaciones}
+        renderItem={renderNotificacion}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+      />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+  },
+  list: {
+    paddingBottom: 20,
+  },
+  notificacionContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#005EB8',
+  },
+  message: {
+    fontSize: 14,
+    color: '#333',
+  },
+});
 
 export default Notificaciones;

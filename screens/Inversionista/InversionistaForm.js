@@ -4,7 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { db, auth } from '../../firebase/firebaseconfig'; 
 import { doc, setDoc } from 'firebase/firestore';
-import DateTimePicker from '@react-native-community/datetimepicker'; // Importa el DateTimePicker
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const InversionistaForm = ({ navigation }) => {
   const [nombre1, setNombre1] = useState('');
@@ -14,7 +14,7 @@ const InversionistaForm = ({ navigation }) => {
   const [cedula, setCedula] = useState('');
   const [genero, setGenero] = useState('');
   const [fecha_nac, setFechaNac] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false); // Estado para mostrar el DatePicker
+  const [showDatePicker, setShowDatePicker] = useState(false); 
   const [localidad, setLocalidad] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [preferencia, setPreferencia] = useState('');
@@ -60,10 +60,11 @@ const InversionistaForm = ({ navigation }) => {
     }
 
     try {
-      const id_usuario = Date.now().toString();
+      
+      const inversionistaRef = doc(db, "inversionistas", "id_" + Date.now().toString()); // Genera un ID único
 
-      await setDoc(doc(db, "inversionistas", id_usuario), {
-        id_usuario,
+      await setDoc(inversionistaRef, {
+        id_inversionista: inversionistaRef.id, 
         nombre1,
         nombre2,
         apellido1,
@@ -255,4 +256,3 @@ const styles = StyleSheet.create({
 });
 
 export default InversionistaForm;
-

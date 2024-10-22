@@ -12,15 +12,16 @@ import InversionistaForm from './screens/Inversionista/InversionistaForm';
 import Notificaciones from './screens/Inversionista/Notificaciones';
 import ExploracionProyecto from './screens/Inversionista/ExploracionProyecto';
 import EmprendedorForm from './screens/Emprendedor/EmprendedorForm';
-import Inicio from './screens/Inicio';
 import AdminForm from './screens/Administrador/AdminForm';
-import AdminDashboard from './screens/Administrador/AdminDashboard'; // Asegúrate de importar AdminDashboard
+import AdminDashboard from './screens/Administrador/AdminDashboard';
 import AdminPerfil from './screens/Administrador/AdminPerfil';
 import Proyectos from './screens/Emprendedor/Proyectos';
 import InversionistaDashboard from './screens/Inversionista/InversionistaDashboard';
-import InversionistaPerfil from './screens/Inversionista/InversionistaPerfil';
+import Perfil from './screens/Inversionista/Perfil';
 import Login from './screens/Login';
-;
+import ChatE from './screens/Emprendedor/ChatE';
+import MessageInput from './screens/MessageInput';
+import ListarChats from './screens/Inversionista/ListarChats';
 
 // Crear un Stack Navigator para las funcionalidades de administración
 const AdminStack = createStackNavigator();
@@ -31,17 +32,17 @@ function AdminNavigator() {
       <AdminStack.Screen
         name="AdminForm"
         component={AdminForm}
-        options={{ headerShown: false }} // Ocultar el encabezado si es necesario
+        options={{ headerShown: false }} 
       />
       <AdminStack.Screen
         name="AdminDashboard"
         component={AdminDashboard}
-        options={{ headerShown: false }} // Ocultar el encabezado si es necesario
+        options={{ headerShown: false }} 
       />
       <AdminStack.Screen
         name="AdminPerfil"
         component={AdminPerfil}
-        options={{ headerShown: false }} // Ocultar el encabezado si es necesario
+        options={{ headerShown: false }} 
       />
     </AdminStack.Navigator>
   );
@@ -68,16 +69,29 @@ function MyTabs() {
           ),
         }}
       />
-      <Tab.Screen
+       <Tab.Screen
         name='Chats'
-        component={Chats}
+        component={Chats} // Agrega el componente Chat aquí
         options={{
           tabBarLabel: 'Chats',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="chat" size={size} color={color} />
+            <MaterialCommunityIcons name="chats" size={size} color={color} />
           ),
         }}
       />
+      
+      <Tab.Screen
+        name='MessageInput'
+        component={MessageInput}
+        options={{
+          headerShown: false,
+          tabBarLabel: 'MessageInout',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="Message" size={size} color={color} />
+          ),
+        }}
+      />
+
       <Tab.Screen
         name='SeleccionPerfil'
         component={SeleccionPerfil}
@@ -88,8 +102,7 @@ function MyTabs() {
           ),
         }}
       />
-
-<Tab.Screen
+      <Tab.Screen
         name='Login'
         component={Login}
         options={{
@@ -99,7 +112,6 @@ function MyTabs() {
           ),
         }}
       />
-
       <Tab.Screen
         name='Registro'
         component={Registro}
@@ -110,13 +122,13 @@ function MyTabs() {
           ),
         }}
       />
-        <Tab.Screen
+      <Tab.Screen
         name='InversionistaDashboard'
         component={InversionistaDashboard}
         options={{
           tabBarLabel: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="account-plus" size={size} color={color} />
+            <MaterialCommunityIcons name="account-tie" size={size} color={color} />
           ),
         }}
       />
@@ -131,20 +143,7 @@ function MyTabs() {
           ),
         }}
       />
-      <Tab.Screen
-        name='Inicio'
-        component={Inicio}
-        options={{
-          headerShown: false,
-          tabBarLabel: 'Inicio',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="bell" size={size} color={color} />
-          ),
-        }}
-      />
-
-
-
+   
       <Tab.Screen
         name='Notificaciones'
         component={Notificaciones}
@@ -156,9 +155,9 @@ function MyTabs() {
           ),
         }}
       />
-       <Tab.Screen
-        name='InversionistaPerfil'
-        component={InversionistaPerfil}
+      <Tab.Screen
+        name='Perfil'
+        component={Perfil}
         options={{
           tabBarLabel: 'Perfil',
           tabBarIcon: ({ color, size }) => (
@@ -187,6 +186,29 @@ function MyTabs() {
           ),
         }}
       />
+      <Tab.Screen
+        name='ChatE'
+        component={ChatE} 
+        options={{
+          tabBarLabel: 'ChatE',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="chats" size={size} color={color} />
+          ),
+        }}
+      />
+      
+      <Tab.Screen
+        name='ListarChats'
+        component={ListarChats} 
+        options={{
+          tabBarLabel: 'ListarChats',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="chats" size={size} color={color} />
+          ),
+        }}
+      />
+
+
 
       <Tab.Screen
         name='ExploracionProyecto'
@@ -201,7 +223,7 @@ function MyTabs() {
       />
       <Tab.Screen
         name='Admin'
-        component={AdminNavigator} // Cambiar a usar el Stack Navigator
+        component={AdminNavigator}
         options={{
           headerShown: false,
           tabBarLabel: 'Admin',
@@ -214,11 +236,10 @@ function MyTabs() {
   );
 }
 
-export default function Navegacion() {
+export default function navegacion() {
   return (
     <NavigationContainer>
       <MyTabs />
     </NavigationContainer>
   );
 }
-

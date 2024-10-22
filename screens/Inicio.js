@@ -1,35 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../firebase/firebaseconfig';
 
-export default function Inicio({ navigation, route }) {
+export default function Inicio({ navigation, userId }) { // Asegúrate de recibir userId
   const [proyectos, setProyectos] = useState([]);
   const [filtro, setFiltro] = useState('');
-  const [id_emprendedor, setIdEmprendedor] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Verificar si route.params y route.params.id_emprendedor están definidos
-    if (route.params && route.params.id_emprendedor) {
-      setIdEmprendedor(route.params.id_emprendedor);
-      console.log('Emprendedor ID:', route.params.id_emprendedor);
-    } else {
-      console.error("El ID del emprendedor no está definido en route.params.");
-    }
-  }, [route.params]);
-
-  // Cargar proyectos al montar el componente o cuando cambie el filtro
   const cargarProyectos = async () => {
-    if (!id_emprendedor) {
-      console.error("El ID del emprendedor no está definido");
-      return; // Salir si el ID no está definido
-    }
-
+    setLoading(true);
     try {
-      // Si hay filtro, añadir la condición de categoría, si no, cargar todos los proyectos del emprendedor
       const q = filtro
-        ? query(collection(db, 'proyectos'), where('id_emprendedor', '==', id_emprendedor), where('categoria', '==', filtro)) 
-        : query(collection(db, 'proyectos'), where('id_emprendedor', '==', id_emprendedor));
+        ? query(collection(db, 'proyectos'), where('categoria', '==', filtro))
+        : collection(db, 'proyectos');
 
       const querySnapshot = await getDocs(q);
       const proyectosData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -37,19 +21,19 @@ export default function Inicio({ navigation, route }) {
     } catch (error) {
       console.error("Error cargando proyectos:", error);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
     cargarProyectos();
-  }, [filtro, id_emprendedor]);
+  }, [filtro]);
 
-  // Manejo del botón "Me encanta"
   const handleMeEncanta = async (id, likes) => {
     const proyectoRef = doc(db, 'proyectos', id);
     try {
-      await updateDoc(proyectoRef, { likes: likes + 1 }); // Incrementar likes
+      await updateDoc(proyectoRef, { likes: (likes || 0) + 1 });
       const updatedProyectos = proyectos.map((proyecto) =>
-        proyecto.id === id ? { ...proyecto, likes: likes + 1 } : proyecto
+        proyecto.id === id ? { ...proyecto, likes: (likes || 0) + 1 } : proyecto
       );
       setProyectos(updatedProyectos);
     } catch (error) {
@@ -57,43 +41,53 @@ export default function Inicio({ navigation, route }) {
     }
   };
 
-  // Navegar al chat
-  const handleChat = (id_emprendedor) => {
-    navigation.navigate('Chat', { id_emprendedor });
+  const handleChats = (id_emprendedor) => {
+    navigation.navigate('Chat', { id_emprendedor }); 
   };
+  
 
-  // Renderizar cada proyecto
   const renderProyecto = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Image source={{ uri: item.foto_perfil }} style={styles.avatar} />
+        {item.fotoPerfil ? (
+          <Image
+            source={{ uri: item.fotoPerfil }}
+            style={styles.profileImage}
+          />
+        ) : (
+          <View style={styles.placeholderImage} />
+        )}
         <Text style={styles.emprendedorNombre}>{item.nombre}</Text>
       </View>
       <Text style={styles.proyectoDescripcion}>{item.descripcion}</Text>
       <View style={styles.footer}>
         <TouchableOpacity onPress={() => handleMeEncanta(item.id, item.likes)}>
-          <Text style={styles.iconText}>❤️ {item.likes}</Text>
+          <Text style={styles.iconText}>❤️ {item.likes || 0}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleChat(item.id_emprendedor)}>
+        <TouchableOpacity onPress={() => handleChats(item.id_emprendedor)}>
           <Text style={styles.iconText}>💬 Chat</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
+  if (loading) {
+    return <ActivityIndicator size="large" color="#005EB8" style={styles.loading} />;
+  }
+
   return (
     <View style={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder="Filtrar por sector"
+        placeholder="Filtrar por categoría"
         value={filtro}
-        onChangeText={setFiltro} // Actualizar filtro al escribir
+        onChangeText={setFiltro}
       />
       <FlatList
         data={proyectos}
         renderItem={renderProyecto}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text>No se encontraron proyectos</Text>} // Mostrar mensaje si no hay proyectos
+        ListEmptyComponent={<Text>No se encontraron proyectos</Text>}
       />
     </View>
   );
@@ -104,6 +98,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#F7F9FC',
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     height: 40,
@@ -130,10 +129,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  avatar: {
+  profileImage: {
     width: 50,
     height: 50,
     borderRadius: 25,
+    marginRight: 10,
+  },
+  placeholderImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#ccc',
     marginRight: 10,
   },
   emprendedorNombre: {
@@ -149,9 +155,10 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   iconText: {
     fontSize: 16,
-    color: '#ff6347',
+    color: '#005EB8',
   },
 });

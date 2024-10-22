@@ -27,7 +27,7 @@ const Login = () => {
         const userData = usersSnapshot.docs[0].data(); 
         const userRole = userData.rol;
 
-        // Navegar a la pantalla correspondiente según el rol
+        
         switch (userRole) {
           case 'Administrador':
             navigation.reset({
@@ -55,7 +55,7 @@ const Login = () => {
         Alert.alert('Error', 'No se encontró información del usuario en la base de datos'); 
       } 
 
-      // Limpiar campos después del login
+  
       setEmail(''); 
       setPassword(''); 
     } catch (error) { 

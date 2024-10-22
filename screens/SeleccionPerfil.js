@@ -6,7 +6,7 @@ export default function SeleccionPerfil({ navigation }) {
     if (perfil === 'Inversionista') {
       navigation.navigate('InversionistaForm');
     } else if (perfil === 'Emprendedor') {
-      navigation.navigate('EmprendedorDashboard');
+      navigation.navigate('EmprendedorForm');
     } else if (perfil === 'Administrador') {
       navigation.navigate('AdminDashboard');
     }

@@ -1,96 +1,136 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from 'react-native';
+import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { getFirestore, collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
+import { db } from '../../firebase/firebaseconfig';
 
-const firestore = getFirestore();
+export default function InversionistaDashboard({ navigation, userId }) {
+  const [proyectos, setProyectos] = useState([]);
+  const [filtro, setFiltro] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-export default function InversionistaDashboard({ navigation }) {
-  const [projects, setProjects] = useState([]);
+  const cargarProyectos = async () => {
+    setLoading(true);
+    try {
+      const q = filtro
+        ? query(collection(db, 'proyectos'), where('categoria', '==', filtro))
+        : collection(db, 'proyectos');
+
+      const querySnapshot = await getDocs(q);
+      const proyectosData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setProyectos(proyectosData);
+    } catch (error) {
+      console.error("Error cargando proyectos:", error);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      const querySnapshot = await getDocs(collection(firestore, 'projects'));
-      const projectsList = [];
-      querySnapshot.forEach((doc) => {
-        projectsList.push({ id: doc.id, ...doc.data() });
-      });
-      setProjects(projectsList);
-    };
-
-    fetchProjects();
-  }, []);
-
-  const handleNavigation = (screen) => {
-    navigation.navigate(screen);
-  };
+    cargarProyectos();
+  }, [filtro]);
 
   const handleMeEncanta = async (id, likes) => {
-    const proyectoRef = doc(firestore, 'projects', id);
-    await updateDoc(proyectoRef, { likes: likes + 1 });
+    const proyectoRef = doc(db, 'proyectos', id);
+    try {
+      await updateDoc(proyectoRef, { likes: (likes || 0) + 1 });
+      const updatedProyectos = proyectos.map((proyecto) =>
+        proyecto.id === id ? { ...proyecto, likes: (likes || 0) + 1 } : proyecto
+      );
+      setProyectos(updatedProyectos);
+    } catch (error) {
+      console.error("Error al dar 'me encanta':", error);
+    }
   };
 
-  const renderProject = ({ item }) => (
+  // Actualiza esta función para que tome el ID del emprendedor
+  const handleChats = (id_emprendedor) => {
+    navigation.navigate('Chats', { id_emprendedor }); 
+  };
+
+  const filteredProyectos = proyectos.filter((proyecto) =>
+    proyecto.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    proyecto.descripcion.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const renderProyecto = ({ item }) => (
     <View style={styles.projectCard}>
       <View style={styles.projectHeader}>
-        <Image source={{ uri: item.profileImage }} style={styles.avatar} />
-        <Text style={styles.projectAuthor}>{item.authorName}</Text>
+        {item.fotoPerfil ? (
+          <Image
+            source={{ uri: item.fotoPerfil }}
+            style={styles.avatar}
+          />
+        ) : (
+          <View style={styles.placeholderImage} />
+        )}
+        <Text style={styles.projectAuthor}>{item.nombre}</Text>
       </View>
-      <Text style={styles.projectDescription}>{item.description}</Text>
+      <Text style={styles.projectDescription}>{item.descripcion}</Text>
       <View style={styles.projectFooter}>
         <TouchableOpacity onPress={() => handleMeEncanta(item.id, item.likes)}>
           <View style={styles.likesContainer}>
             <MaterialCommunityIcons name="heart" size={24} color="#E63946" />
-            <Text style={styles.likesText}>{item.likes} Me encanta</Text>
+            <Text style={styles.likesText}>{item.likes || 0} Me encanta</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleNavigation('Chat', { emprendedorId: item.emprendedorId })}>
+        <TouchableOpacity onPress={() => handleChats(item.id_emprendedor)}>
           <View style={styles.chatContainer}>
             <MaterialCommunityIcons name="message" size={24} color="#1E90FF" />
-            <Text style={styles.chatText}>Ver más</Text>
+            <Text style={styles.chatText}>Chat</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('InversionistaPerfil', { userId: item.id })}>
+        <TouchableOpacity onPress={() => navigation.navigate('Perfil', { userId: item.id })}>
           <Text style={styles.profileLink}>Ver perfil</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
+  if (loading) {
+    return <ActivityIndicator size="large" color="#005EB8" style={styles.loading} />;
+  }
+
   return (
     <View style={styles.container}>
+      <Image source={require('../../assets/icon/LogoStartCap.png')} style={styles.backgroundImage} />
+
+      {/* Barra de notificaciones y búsqueda */}
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.notificationIcon} onPress={() => navigation.navigate('Notificaciones')}>
+          <MaterialCommunityIcons name="bell" size={28} color="#003366" />
+        </TouchableOpacity>
+        <View style={styles.searchContainer}>
+          <MaterialCommunityIcons name="magnify" size={24} color="#666666" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar proyectos..."
+            value={searchQuery}
+            onChangeText={(text) => setSearchQuery(text)}
+          />
+        </View>
+      </View>
+
+      {/* Barra de navegación compacta para Chats y Perfil */}
       <View style={styles.navbar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Inicio')}>
-          <MaterialCommunityIcons name="home-outline" size={32} color="#003366" />
-          <Text style={styles.navText}>Inicio</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Busqueda')}>
-          <MaterialCommunityIcons name="magnify" size={32} color="#003366" />
-          <Text style={styles.navText}>Búsqueda</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Chats')}>
-          <MaterialCommunityIcons name="message-outline" size={32} color="#003366" />
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Chats')}>
+          <MaterialCommunityIcons name="message-outline" size={24} color="#003366" />
           <Text style={styles.navText}>Chats</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('Notificaciones')}>
-          <MaterialCommunityIcons name="bell-outline" size={32} color="#003366" />
-          <Text style={styles.navText}>Notificaciones</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => handleNavigation('InversionistaPerfil')}>
-          <MaterialCommunityIcons name="account-outline" size={32} color="#003366" />
+        
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Perfil')}>
+          <MaterialCommunityIcons name="account-outline" size={24} color="#003366" />
           <Text style={styles.navText}>Perfil</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Lista de proyectos */}
       <FlatList
-        data={projects}
-        renderItem={renderProject}
+        data={filteredProyectos}
+        renderItem={renderProyecto}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.projectsList}
+        ListEmptyComponent={<Text>No se encontraron proyectos</Text>}
       />
     </View>
   );
@@ -101,8 +141,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F9FC',
   },
+  backgroundImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+    opacity: 0.1,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#FFFFFF',
+  },
+  notificationIcon: {
+    padding: 5,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 25,
+    flex: 1,
+    marginLeft: 10,
+    paddingHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  searchInput: {
+    flex: 1,
+    paddingLeft: 10,
+    color: '#666666',
+  },
   projectsList: {
     padding: 20,
+    paddingBottom: 80,
   },
   projectCard: {
     backgroundColor: '#FFFFFF',
@@ -167,16 +245,22 @@ const styles = StyleSheet.create({
   navbar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 10,
+    paddingVertical: 5,
     backgroundColor: '#FFFFFF',
-    borderBottomColor: '#CCCCCC',
+    borderBottomColor: '#EEEEEE',
     borderBottomWidth: 1,
   },
   navItem: {
     alignItems: 'center',
   },
   navText: {
-    color: '#003366',
     fontSize: 12,
+    color: '#003366',
+    marginTop: 2,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

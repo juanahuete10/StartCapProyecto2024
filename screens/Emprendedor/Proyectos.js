@@ -8,7 +8,7 @@ const Proyectos = ({ navigation }) => {
   const [descripcion, setDescripcion] = useState('');
   const [categoria, setCategoria] = useState('');
   const [ubicacion, setUbicacion] = useState('');
-  const [id_emprend, setIdEmprend] = useState(1); // Cambia esto según el ID del emprendedor correspondiente
+  const [id_emprendedor, setIdEmprendedor] = useState(1); 
 
   const limpiarCampos = () => {
     setNombre('');
@@ -31,11 +31,11 @@ const Proyectos = ({ navigation }) => {
         descripcion,
         categoria,
         ubicacion,
-        id_emprend,
+        id_emprendedor,
       });
       Alert.alert("Proyecto guardado con éxito!");
       limpiarCampos();
-      navigation.navigate('ProyectosDashboard'); // Redirige a la pantalla de proyectos
+      navigation.navigate('ProyectosDashboard'); 
     } catch (error) {
       console.error("Error al guardar proyecto:", error);
       Alert.alert("Hubo un error al guardar el proyecto.");
@@ -44,17 +44,27 @@ const Proyectos = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.label}>Nombre del Proyecto:</Text>
-      <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
+      <Text style={styles.title}>Crear Nuevo Proyecto</Text>
+      
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Nombre del Proyecto:</Text>
+        <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Ingresa el nombre" placeholderTextColor="#B0B0B0" />
+      </View>
 
-      <Text style={styles.label}>Descripción:</Text>
-      <TextInput style={styles.input} value={descripcion} onChangeText={setDescripcion} />
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Descripción:</Text>
+        <TextInput style={styles.input} value={descripcion} onChangeText={setDescripcion} placeholder="Ingresa la descripción" placeholderTextColor="#B0B0B0" multiline={true} numberOfLines={3} />
+      </View>
 
-      <Text style={styles.label}>Categoría:</Text>
-      <TextInput style={styles.input} value={categoria} onChangeText={setCategoria} />
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Categoría:</Text>
+        <TextInput style={styles.input} value={categoria} onChangeText={setCategoria} placeholder="Ingresa la categoría" placeholderTextColor="#B0B0B0" />
+      </View>
 
-      <Text style={styles.label}>Ubicación:</Text>
-      <TextInput style={styles.input} value={ubicacion} onChangeText={setUbicacion} />
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Ubicación:</Text>
+        <TextInput style={styles.input} value={ubicacion} onChangeText={setUbicacion} placeholder="Ingresa la ubicación" placeholderTextColor="#B0B0B0" />
+      </View>
 
       <TouchableOpacity style={styles.button} onPress={guardarProyecto}>
         <Text style={styles.buttonText}>Guardar Proyecto</Text>
@@ -67,43 +77,51 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor: '#FFFAE3',
+    backgroundColor: '#F2F4F8', 
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#005EB8',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    width: '100%',
+    marginBottom: 15,
   },
   label: {
     fontSize: 16,
-    fontFamily: 'TW CEN MT',
     fontWeight: 'bold',
-    color: '#005EB8',
-    marginVertical: 8,
-    alignSelf: 'flex-start',
+    color: '#333',
+    marginBottom: 5,
     marginLeft: 10,
   },
   input: {
-    width: '90%',
-    borderWidth: 2,
+    width: '100%',
+    borderWidth: 1,
     borderColor: '#005EB8',
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
     fontSize: 14,
-    fontFamily: 'TW CEN MT',
     color: '#333',
     backgroundColor: '#FFFFFF',
-    marginVertical: 5,
+    elevation: 1, 
   },
   button: {
     backgroundColor: '#005EB8',
     borderRadius: 8,
-    padding: 10,
+    padding: 15,
     marginTop: 20,
-    width: '90%',
+    width: '100%',
     alignItems: 'center',
+    elevation: 2,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'TW CEN MT',
+    fontWeight: 'bold',
   },
 });
 

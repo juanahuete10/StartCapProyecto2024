@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, setDoc, doc } from 'firebase/firestore'; // Importa Firestore
+import { getFirestore, setDoc, doc } from 'firebase/firestore';
+import { Picker } from '@react-native-picker/picker'; 
+
 
 export default function Registro({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rol, setRol] = useState('Inversionista'); 
 
   const validarEmail = (email) => {
     const regex = /\S+@\S+\.\S+/;
@@ -14,7 +17,7 @@ export default function Registro({ navigation }) {
 
   const registrarUsuario = async () => {
     const auth = getAuth();
-    const db = getFirestore(); // Inicializa Firestore
+    const db = getFirestore();
 
     if (!email || !validarEmail(email)) {
       Alert.alert('Error', 'Por favor, introduce un correo electrónico válido.');
@@ -33,10 +36,9 @@ export default function Registro({ navigation }) {
       // Guarda el rol del usuario en Firestore
       await setDoc(doc(db, 'usuarios', user.uid), {
         email: user.email,
-        rol: 'Inversionista', // O el rol que necesites asignar
+        rol: rol, // Usa el rol seleccionado
       });
 
-      // Navega a la pantalla de Selección de Perfil, pasando el userId
       navigation.navigate('SeleccionPerfil', { userId: user.uid });
     } catch (error) {
       console.error('Error al registrar:', error.code, error.message);
@@ -71,6 +73,17 @@ export default function Registro({ navigation }) {
         placeholderTextColor="#B0BEC5"
       />
 
+      {/* Picker para seleccionar el rol */}
+      <Picker
+        selectedValue={rol}
+        style={styles.picker}
+        onValueChange={(itemValue) => setRol(itemValue)}
+      >
+        <Picker.Item label="Inversionista" value="Inversionista" />
+        <Picker.Item label="Emprendedor" value="Emprendedor" />
+        {/* Agrega más roles si es necesario */}
+      </Picker>
+
       <TouchableOpacity style={styles.button} onPress={registrarUsuario}>
         <Text style={styles.buttonText}>Registrarse</Text>
       </TouchableOpacity>
@@ -101,14 +114,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#003366',
-    fontFamily: 'TW CEN MT',
     marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: '#607D8B',
-    fontFamily: 'TW CEN MT',
     marginBottom: 30,
     textAlign: 'center',
   },
@@ -122,11 +133,11 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     fontSize: 16,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-    fontFamily: 'TW CEN MT',
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    marginBottom: 20,
   },
   button: {
     width: '100%',
@@ -135,22 +146,16 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     marginTop: 10,
-    shadowColor: '#FFD700',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
   },
   buttonText: {
     color: '#003366',
     fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'TW CEN MT',
   },
   infoText: {
     fontSize: 14,
     color: '#607D8B',
     marginTop: 20,
-    fontFamily: 'TW CEN MT',
   },
   linkText: {
     color: '#007bff',
