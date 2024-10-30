@@ -1,30 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, FlatList, Text, Button, StyleSheet } from 'react-native';
 import { db } from '../../firebase/firebaseconfig';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
-const ListarChats = ({ navigation, id_usuario, rol }) => {
+const ListarChats = ({ navigation }) => {
   const [chats, setChats] = useState([]);
+  const auth = getAuth();
 
   useEffect(() => {
-    const chatsRef = query(
-      collection(db, 'chats'),
-      where(rol === 'emprendedor' ? 'id_emprendedor' : 'id_inversionista', '==', id_usuario)
-    );
+    const userId = auth.currentUser?.uid; // Obtén el ID del usuario autenticado
+    const chatsRef = collection(db, 'chats'); // Asegúrate de que esta colección exista
 
     const unsubscribe = onSnapshot(chatsRef, (querySnapshot) => {
-      const chatsList = [];
+      const chatList = [];
       querySnapshot.forEach((doc) => {
-        chatsList.push({ ...doc.data(), id: doc.id });
+        chatList.push({ id: doc.id, ...doc.data() });
       });
-      setChats(chatsList);
+      setChats(chatList);
+    }, (error) => {
+      console.error("Error al cargar los chats: ", error);
     });
 
     return () => unsubscribe();
-  }, [id_usuario, rol]);
+  }, []);
 
-  const handleChatPress = (chat) => {
-    navigation.navigate('ChatE', { chatId: chat.id, chatData: chat });
+  const goToChat = (chatData) => {
+    navigation.navigate('Chats', { chatData });
   };
 
   return (
@@ -32,9 +34,10 @@ const ListarChats = ({ navigation, id_usuario, rol }) => {
       <FlatList
         data={chats}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleChatPress(item)}>
-            <Text style={styles.chatItem}>{item.id}</Text>
-          </TouchableOpacity>
+          <View style={styles.chatItem}>
+            <Text>{item.chatName || item.id}</Text> {/* Muestra el nombre del chat */}
+            <Button title="Abrir Chat" onPress={() => goToChat(item)} />
+          </View>
         )}
         keyExtractor={(item) => item.id}
       />
@@ -43,8 +46,16 @@ const ListarChats = ({ navigation, id_usuario, rol }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  chatItem: { fontSize: 18, padding: 10, borderBottomWidth: 1 }
+  container: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: '#FFF',
+  },
+  chatItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
 });
 
 export default ListarChats;

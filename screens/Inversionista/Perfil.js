@@ -1,121 +1,89 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Alert, Image, TouchableOpacity, TextInput } from 'react-native';
-import { auth, db } from '../../firebase/firebaseconfig'; // Importa tu configuración de Firebase
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { View, Text, StyleSheet, Image, Alert, TouchableOpacity } from 'react-native';
+import { db, auth } from '../../firebase/firebaseconfig'; 
+import { doc, getDoc } from 'firebase/firestore';
 
-const Perfil = () => {
-  const [usuario, setUsuario] = useState(null);
-  const [cargando, setCargando] = useState(true);
-  const [editando, setEditando] = useState(false);
-  const [nombre, setNombre] = useState('');
-  const [fotoPerfil, setFotoPerfil] = useState(null);
+const Perfil = ({ navigation }) => {
+  const [inversionistasData, setInversionistasData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUsuario = async () => {
-      const user = auth.currentUser;
+    const fetchInversionistasData = async () => {
+      if (!auth.currentUser) {
+        Alert.alert("Error", "Usuario no autenticado.");
+        return;
+      }
 
-      if (user) {
-        try {
-          const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            setUsuario(data);
-            setNombre(data.nombre || '');
-            setFotoPerfil(data.foto_perfil || null);
-          } else {
-            Alert.alert('Error', 'No se encontraron datos del usuario.');
-          }
-        } catch (error) {
-          Alert.alert('Error', 'Hubo un problema al cargar los datos del perfil.');
-          console.error("Error al cargar datos del usuario:", error);
-        } finally {
-          setCargando(false);
+      const uid = auth.currentUser.uid; 
+      console.log("UID del usuario:", uid); 
+      const inversionistasRef = doc(db, "inversionistas", uid); 
+
+      try {
+        const inversionistasDoc = await getDoc(inversionistasRef);
+
+        if (inversionistasDoc.exists()) {
+          setInversionistasData(inversionistasDoc.data()); 
+        } else {
+          Alert.alert("Error", "No se encontraron datos del inversionista.");
+          console.log("No se encontró el documento:", inversionistasRef.path); 
         }
-      } else {
-        Alert.alert('Error', 'No hay un usuario autenticado.');
-        setCargando(false);
+      } catch (error) {
+        console.error("Error al obtener datos del inversionista:", error);
+        Alert.alert("Error", "Ocurrió un error al obtener los datos del inversionista.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchUsuario();
+    fetchInversionistasData(); 
   }, []);
 
-  const guardarCambios = async () => {
-    if (!nombre) {
-      Alert.alert("Error", "El nombre no puede estar vacío.");
-      return;
-    }
-
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const userRef = doc(db, 'usuarios', user.uid);
-        await updateDoc(userRef, {
-          nombre,
-        });
-        setUsuario({ ...usuario, nombre });
-        setEditando(false);
-        Alert.alert("Perfil actualizado con éxito!");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Hubo un problema al actualizar el perfil.");
-      console.error("Error al actualizar perfil:", error);
-    }
-  };
-
-  if (cargando) {
-    return (
-      <View style={styles.container}>
-        <Text>Cargando...</Text>
-      </View>
-    );
+  if (loading) {
+    return <Text>Cargando...</Text>; 
   }
+
+  if (!inversionistasData) {
+    return null; 
+  }
+
+  const {
+    nombre1,
+    nombre2,
+    apellido1,
+    apellido2,
+    cedula,
+    genero,
+    fecha_nac,
+    localidad,
+    descripcion,
+    preferencia,
+    foto_perfil,
+    email
+  } = inversionistasData;
 
   return (
     <View style={styles.container}>
-      {usuario && (
-        <>
-          {fotoPerfil ? (
-            <Image source={{ uri: fotoPerfil }} style={styles.image} />
-          ) : (
-            <Image
-              source={require('../../assets/icon/LogoStartCap.png')} // Puedes cambiar esta imagen según tus necesidades
-              style={styles.image}
-            />
-          )}
-
-          {editando ? (
-            <>
-              <Text style={styles.label}>Nombre:</Text>
-              <TextInput
-                style={styles.input}
-                value={nombre}
-                onChangeText={setNombre}
-              />
-
-              <TouchableOpacity style={styles.button} onPress={guardarCambios}>
-                <Text style={styles.buttonText}>Guardar Cambios</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Text style={styles.title}>Perfil de {usuario.nombre}</Text>
-              <Text style={styles.label}>Correo: {usuario.email}</Text>
-              <Text style={styles.label}>Rol: {usuario.rol}</Text>
-              <Text style={styles.label}>Género: {usuario.genero}</Text>
-              <Text style={styles.label}>Cédula: {usuario.cedula}</Text>
-              <Text style={styles.label}>Fecha de Nacimiento: {usuario.fecha_nacimiento}</Text>
-              <Text style={styles.label}>Localidad: {usuario.localidad}</Text>
-              <Text style={styles.label}>Descripción: {usuario.descripcion}</Text>
-              <Text style={styles.label}>Preferencia: {usuario.preferencia}</Text>
-
-              <TouchableOpacity style={styles.button} onPress={() => setEditando(true)}>
-                <Text style={styles.buttonText}>Editar Perfil</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </>
+      {foto_perfil && (
+        <Image
+          source={{ uri: foto_perfil }}
+          style={styles.fotoPerfil}
+        />
       )}
+      <Text style={styles.label}>Nombre: {nombre1} {nombre2} {apellido1} {apellido2}</Text>
+      <Text style={styles.label}>Cédula: {cedula}</Text>
+      <Text style={styles.label}>Género: {genero}</Text>
+      <Text style={styles.label}>Fecha de Nacimiento: {fecha_nac}</Text>
+      <Text style={styles.label}>Localidad: {localidad}</Text>
+      <Text style={styles.label}>Descripción: {descripcion}</Text>
+      <Text style={styles.label}>Preferencia: {preferencia}</Text>
+      <Text style={styles.label}>Email: {email}</Text>
+
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={() => navigation.navigate('InversionistaForm', { inversionistasData })}
+      >
+        <Text style={styles.buttonText}>Editar Perfil</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -124,45 +92,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#FFFAE3',
-    alignItems: 'center',
+    backgroundColor: '#F7F9FC',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#005EB8',
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 18,
-    color: '#333',
-    marginVertical: 5,
-  },
-  image: {
+  fotoPerfil: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 20,
+    marginBottom: 15,
   },
-  input: {
-    width: '90%',
-    borderWidth: 2,
-    borderColor: '#005EB8',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#FFFFFF',
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#005EB8',
+    marginVertical: 8,
   },
   button: {
     backgroundColor: '#005EB8',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 20,
-    width: '90%',
+    padding: 15,
+    borderRadius: 5,
     alignItems: 'center',
+    marginTop: 20,
   },
   buttonText: {
     color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });

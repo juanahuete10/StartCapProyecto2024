@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, setDoc, doc } from 'firebase/firestore';
-import { Picker } from '@react-native-picker/picker'; 
-
+import { Picker } from '@react-native-picker/picker';
 
 export default function Registro({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rol, setRol] = useState('Inversionista'); 
+  const [rol, setRol] = useState(''); 
 
   const validarEmail = (email) => {
     const regex = /\S+@\S+\.\S+/;
@@ -19,6 +18,7 @@ export default function Registro({ navigation }) {
     const auth = getAuth();
     const db = getFirestore();
 
+   
     if (!email || !validarEmail(email)) {
       Alert.alert('Error', 'Por favor, introduce un correo electrónico válido.');
       return;
@@ -29,17 +29,25 @@ export default function Registro({ navigation }) {
       return;
     }
 
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+    if (!rol) {
+      Alert.alert('Error', 'Por favor, selecciona un rol.');
+      return;
+    }
 
-      // Guarda el rol del usuario en Firestore
+    try {
+      // Registro del usuario
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user; 
+
+    
       await setDoc(doc(db, 'usuarios', user.uid), {
         email: user.email,
-        rol: rol, // Usa el rol seleccionado
+        rol: rol,
+        id_usuario: user.uid 
       });
 
-      navigation.navigate('SeleccionPerfil', { userId: user.uid });
+      
+      navigation.navigate('SeleccionPerfil', { rol });
     } catch (error) {
       console.error('Error al registrar:', error.code, error.message);
       Alert.alert('Error', 'Error al registrar: ' + error.message);
@@ -48,50 +56,52 @@ export default function Registro({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image 
-        style={styles.logo} 
-        source={require('../assets/icon/LogoStartCap.png')} 
-      />
-      <Text style={styles.title}>Crear una cuenta</Text>
-      <Text style={styles.subtitle}>Por favor, llena los siguientes campos</Text>
-      
-      <TextInput
-        placeholder="Correo electrónico"
-        value={email}
-        onChangeText={(text) => setEmail(text.trim())}
-        style={styles.input}
-        keyboardType="email-address"
-        placeholderTextColor="#B0BEC5"
-      />
+      <View style={styles.innerContainer}>
+        <Image 
+          style={styles.logo} 
+          source={require('../assets/icon/LogoStartCap.png')} 
+        />
+        <Text style={styles.title}>Crear una cuenta</Text>
+        <Text style={styles.subtitle}>Por favor, llena los siguientes campos</Text>
+        
+        <TextInput
+          placeholder="Correo electrónico"
+          value={email}
+          onChangeText={(text) => setEmail(text.trim())}
+          style={styles.input}
+          keyboardType="email-address"
+          placeholderTextColor="#B0BEC5"
+        />
 
-      <TextInput
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        style={styles.input}
-        secureTextEntry
-        placeholderTextColor="#B0BEC5"
-      />
+        <TextInput
+          placeholder="Contraseña"
+          value={password}
+          onChangeText={setPassword}
+          style={styles.input}
+          secureTextEntry
+          placeholderTextColor="#B0BEC5"
+        />
 
-      {/* Picker para seleccionar el rol */}
-      <Picker
-        selectedValue={rol}
-        style={styles.picker}
-        onValueChange={(itemValue) => setRol(itemValue)}
-      >
-        <Picker.Item label="Inversionista" value="Inversionista" />
-        <Picker.Item label="Emprendedor" value="Emprendedor" />
-        {/* Agrega más roles si es necesario */}
-      </Picker>
+        
+        <Picker
+          selectedValue={rol}
+          style={styles.picker}
+          onValueChange={(itemValue) => setRol(itemValue)}
+        >
+          <Picker.Item label="Selecciona un rol" value="" />
+          <Picker.Item label="Inversionista" value="Inversionista" />
+          <Picker.Item label="Emprendedor" value="Emprendedor" />
+        </Picker>
 
-      <TouchableOpacity style={styles.button} onPress={registrarUsuario}>
-        <Text style={styles.buttonText}>Registrarse</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={registrarUsuario}>
+          <Text style={styles.buttonText}>Registrarse</Text>
+        </TouchableOpacity>
 
-      <Text style={styles.infoText}>
-        ¿Ya tienes una cuenta? 
-        <Text style={styles.linkText} onPress={() => navigation.navigate('Login')}> Inicia sesión</Text>
-      </Text>
+        <Text style={styles.infoText}>
+          ¿Ya tienes una cuenta? 
+          <Text style={styles.linkText} onPress={() => navigation.navigate('Login')}> Inicia sesión</Text>
+        </Text>
+      </View>
     </View>
   );
 }
@@ -99,10 +109,14 @@ export default function Registro({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#B8CDD6', 
+  },
+  innerContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F7F9FC',
     padding: 20,
+    backgroundColor: 'transparent', 
   },
   logo: {
     width: 200,

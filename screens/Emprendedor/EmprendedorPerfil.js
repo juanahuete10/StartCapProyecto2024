@@ -1,269 +1,190 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { db, storage } from '../../firebase/firebaseconfig'; 
-import { doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { db, auth } from '../../firebase/firebaseconfig'; 
+import { doc, getDoc } from 'firebase/firestore';
+import { LinearGradient } from 'expo-linear-gradient';
+import { FontAwesome } from '@expo/vector-icons'; 
 
-const EmprendedorForm = () => {
-  const [nombres, setNombres] = useState('');
-  const [apellidos, setApellidos] = useState('');
-  const [fecha_nac, setFecha_nac] = useState('');
-  const [cedula, setCedula] = useState('');
-  const [genero, setGenero] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [localidad, setLocalidad] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [id_usuario, setId_usuario] = useState('');
-  const [fotoPerfil, setFotoPerfil] = useState(null); // Imagen seleccionada por el usuario
-  const [fotoPerfilURL, setFotoPerfilURL] = useState(''); // URL después de subirla a Firebase
-  const [loading, setLoading] = useState(false); // Estado de carga
+const EmprendedorPerfil = ({ navigation }) => {
+  const [emprendedorData, setEmprendedorData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Solicitar permisos de acceso a la galería
   useEffect(() => {
-    (async () => {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permiso requerido', 'Necesitamos permisos para acceder a la galería.');
+    const fetchEmprendedorData = async () => {
+      if (!auth.currentUser) {
+        Alert.alert("Error", "Usuario no autenticado.");
+        return;
       }
-    })();
+
+      const uid = auth.currentUser.uid;
+      console.log("UID del usuario:", uid); 
+      const emprendedorRef = doc(db, "emprendedor", uid); 
+
+      try {
+        const emprendedorDoc = await getDoc(emprendedorRef); 
+
+        if (emprendedorDoc.exists()) {
+          setEmprendedorData(emprendedorDoc.data());
+        } else {
+          Alert.alert("Error", "No se encontraron datos del emprendedor.");
+          console.log("No se encontró el documento:", emprendedorRef.path); 
+        }
+      } catch (error) {
+        console.error("Error al obtener datos del emprendedor:", error);
+        Alert.alert("Error", "Ocurrió un error al obtener los datos del emprendedor.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmprendedorData();
   }, []);
 
-  // Función para seleccionar imagen desde la galería
-  const pickImage = async () => {
-    try {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1], // Imagen cuadrada
-        quality: 1,
-      });
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#005EB8" />
+      </View>
+    );
+  }
 
-      if (!result.canceled) {
-        setFotoPerfil(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error("Error al seleccionar imagen:", error);
-      Alert.alert('Error', 'Hubo un problema al seleccionar la imagen.');
-    }
-  };
+  if (!emprendedorData) {
+    return (
+      <View style={styles.container}>
+        <Text>No se encontraron datos del emprendedor.</Text>
+      </View>
+    );
+  }
 
-  // Función para subir imagen a Firebase Storage
-  const uploadImage = async (uri) => {
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const storageRef = ref(storage, `fotosPerfil/${Date.now()}.jpg`);
-      await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(storageRef);
-      return downloadURL;
-    } catch (error) {
-      console.error("Error al subir imagen:", error);
-      Alert.alert('Error', 'Hubo un problema al subir la imagen.');
-      return null;
-    }
-  };
-
-  // Función para guardar los datos del emprendedor en Firestore
-  const guardarEmprendedor = async () => {
-    if (!id_usuario) {
-      Alert.alert("ID de Usuario Requerido", "Por favor, ingresa el ID de usuario.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      let uploadedURL = fotoPerfilURL;
-
-      if (fotoPerfil) {
-        uploadedURL = await uploadImage(fotoPerfil);
-        if (!uploadedURL) {
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Guardar datos del emprendedor en Firestore
-      await setDoc(doc(db, "emprendedores", String(id_usuario)), {
-        nombres: nombres,
-        apellidos: apellidos,
-        fecha_nac: fecha_nac,
-        cedula: cedula,
-        genero: genero,
-        correo: correo,
-        localidad: localidad,
-        descripcion: descripcion,
-        id_usuario: id_usuario,
-        foto_perfil: uploadedURL || '',
-      });
-      Alert.alert("Éxito", "Emprendedor guardado correctamente!");
-      // Limpiar el formulario si es necesario
-      setNombres('');
-      setApellidos('');
-      setFecha_nac('');
-      setCedula('');
-      setGenero('');
-      setCorreo('');
-      setLocalidad('');
-      setDescripcion('');
-      setId_usuario('');
-      setFotoPerfil(null);
-      setFotoPerfilURL('');
-    } catch (error) {
-      console.error("Error al guardar emprendedor:", error);
-      Alert.alert("Error", "Hubo un problema al guardar el emprendedor.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    nombre1,
+    nombre2,
+    apellido1,
+    apellido2,
+    cedula,
+    genero,
+    fecha_nac,
+    localidad,
+    descripcion,
+    preferencia,
+    foto_perfil,
+    email
+  } = emprendedorData;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Registro de Emprendedor</Text>
+    <LinearGradient 
+      colors={['#B8CDD6', '#FFFFFF']} 
+      style={styles.container}
+    >
+      <View style={styles.profileContainer}>
+        {foto_perfil && (
+          <Image
+            source={{ uri: foto_perfil }}
+            style={styles.fotoPerfil}
+          />
+        )}
+        <View style={styles.infoContainer}>
+          <FontAwesome name="user" size={20} color="#005EB8" style={styles.icon} />
+          <Text style={styles.label}>Nombre: {nombre1} {nombre2} {apellido1} {apellido2}</Text>
+        </View>
+        <View style={styles.infoContainer}>
+          <FontAwesome name="id-card" size={20} color="#005EB8" style={styles.icon} />
+          <Text style={styles.label}>Cédula: {cedula}</Text>
+        </View>
+        <View style={styles.infoContainer}>
+          <FontAwesome name="genderless" size={20} color="#005EB8" style={styles.icon} />
+          <Text style={styles.label}>Género: {genero}</Text>
+        </View>
+        <View style={styles.infoContainer}>
+          <FontAwesome name="calendar" size={20} color="#005EB8" style={styles.icon} />
+          <Text style={styles.label}>Fecha de Nacimiento: {fecha_nac}</Text>
+        </View>
+        <View style={styles.infoContainer}>
+          <FontAwesome name="map-marker" size={20} color="#005EB8" style={styles.icon} />
+          <Text style={styles.label}>Localidad: {localidad}</Text>
+        </View>
+        <View style={styles.infoContainer}>
+          <FontAwesome name="info-circle" size={20} color="#005EB8" style={styles.icon} />
+          <Text style={styles.label}>Descripción: {descripcion}</Text>
+        </View>
+        <View style={styles.infoContainer}>
+          <FontAwesome name="star" size={20} color="#005EB8" style={styles.icon} />
+          <Text style={styles.label}>Preferencia: {preferencia}</Text>
+        </View>
+        <View style={styles.infoContainer}>
+          <FontAwesome name="envelope" size={20} color="#005EB8" style={styles.icon} />
+          <Text style={styles.label}>Email: {email}</Text>
+        </View>
 
-      {/* Cuadro para la imagen de perfil */}
-      <TouchableOpacity onPress={pickImage}>
-        <Image
-          source={fotoPerfil ? { uri: fotoPerfil } : require('../../assets/placeholder.png')} // Ruta corregida
-          style={styles.profileImage}
-        />
-        <Text style={styles.imageText}>Seleccionar Foto de Perfil</Text>
-      </TouchableOpacity>
-
-      {/* Campos de texto */}
-      <Text style={styles.label}>Nombres:</Text>
-      <TextInput
-        style={styles.input}
-        value={nombres}
-        onChangeText={setNombres}
-        placeholder="Ingresa tus nombres"
-      />
-
-      <Text style={styles.label}>Apellidos:</Text>
-      <TextInput
-        style={styles.input}
-        value={apellidos}
-        onChangeText={setApellidos}
-        placeholder="Ingresa tus apellidos"
-      />
-
-      <Text style={styles.label}>Fecha de Nacimiento:</Text>
-      <TextInput
-        style={styles.input}
-        value={fecha_nac}
-        onChangeText={setFecha_nac}
-        placeholder="YYYY-MM-DD"
-      />
-
-      <Text style={styles.label}>Cédula:</Text>
-      <TextInput
-        style={styles.input}
-        value={cedula}
-        onChangeText={setCedula}
-        placeholder="Ingresa tu cédula"
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Género:</Text>
-      <TextInput
-        style={styles.input}
-        value={genero}
-        onChangeText={setGenero}
-        placeholder="Ingresa tu género"
-      />
-
-      <Text style={styles.label}>Correo:</Text>
-      <TextInput
-        style={styles.input}
-        value={correo}
-        onChangeText={setCorreo}
-        placeholder="Ingresa tu correo electrónico"
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-
-      <Text style={styles.label}>Localidad:</Text>
-      <TextInput
-        style={styles.input}
-        value={localidad}
-        onChangeText={setLocalidad}
-        placeholder="Ingresa tu localidad"
-      />
-
-      <Text style={styles.label}>Descripción:</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        value={descripcion}
-        onChangeText={setDescripcion}
-        placeholder="Descripción sobre ti"
-        multiline={true}
-        numberOfLines={4}
-      />
-
-      <Text style={styles.label}>ID Usuario:</Text>
-      <TextInput
-        style={styles.input}
-        value={id_usuario}
-        onChangeText={setId_usuario}
-        placeholder="Ingresa tu ID de usuario"
-        keyboardType="numeric"
-      />
-
-      {/* Botón de guardar */}
-      {loading ? (
-        <ActivityIndicator size="large" color="#007BFF" />
-      ) : (
-        <Button title="Registrarse" onPress={guardarEmprendedor} color="#007BFF" />
-      )}
-    </ScrollView>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => navigation.navigate('EmprendedorForm', { emprendedorData })} 
+        >
+          <Text style={styles.buttonText}>Editar Perfil</Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     padding: 20,
-    backgroundColor: '#F5F5F5',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#007BFF',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  profileImage: {
+  profileContainer: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+    alignItems: 'center', 
+  },
+  fotoPerfil: {
     width: 100,
     height: 100,
-    borderRadius: 10, // Cuadrado con bordes redondeados
-    alignSelf: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  imageText: {
-    textAlign: 'center',
-    color: '#007BFF',
-    marginBottom: 20,
+    borderRadius: 50,
+    marginBottom: 15,
+    alignSelf: 'center', 
   },
   label: {
     fontSize: 16,
-    color: '#333',
-    marginBottom: 5,
+    fontWeight: 'bold',
+    color: '#005EB8',
+    marginVertical: 8,
+    marginLeft: 10, 
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    marginBottom: 15,
-    backgroundColor: '#FFF',
+  infoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+    alignSelf: 'stretch', 
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+  icon: {
+    marginRight: 10, 
+  },
+  button: {
+    backgroundColor: '#005EB8',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 20,
+    elevation: 3,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 
-export default EmprendedorForm;
+export default EmprendedorPerfil;

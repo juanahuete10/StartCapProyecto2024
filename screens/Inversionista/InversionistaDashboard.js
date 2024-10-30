@@ -1,25 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { collection, getDocs, updateDoc, doc, query, where } from 'firebase/firestore';
+import Entypo from '@expo/vector-icons/Entypo';
+import { collection, getDocs, updateDoc, doc, query, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebaseconfig';
+import { LinearGradient } from 'expo-linear-gradient';
 
-export default function InversionistaDashboard({ navigation, userId }) {
+export default function InversionistaDashboard({ navigation }) {
   const [proyectos, setProyectos] = useState([]);
-  const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   const cargarProyectos = async () => {
     setLoading(true);
     try {
-      const q = filtro
-        ? query(collection(db, 'proyectos'), where('categoria', '==', filtro))
-        : collection(db, 'proyectos');
-
+      const q = query(collection(db, 'proyectos'));
       const querySnapshot = await getDocs(q);
-      const proyectosData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setProyectos(proyectosData);
+      const proyectosData = await Promise.all(
+        querySnapshot.docs.map(async (projectDoc) => {
+          const projectData = projectDoc.data();
+          console.log("Cargando proyecto:", projectData);
+
+          if (!projectData.id_emprendedor) {
+            console.error("ID de emprendedor faltante para el proyecto:", projectDoc.id);
+            return null;
+          }
+
+          const emprendedorRef = doc(db, 'emprendedor', projectData.id_emprendedor);
+          const emprendedorSnap = await getDoc(emprendedorRef);
+          const emprendedorData = emprendedorSnap.exists() ? emprendedorSnap.data() : null;
+
+          return {
+            id: projectDoc.id,
+            ...projectData,
+            emprendedor: emprendedorData,
+          };
+        })
+      );
+
+      setProyectos(proyectosData.filter(Boolean));
     } catch (error) {
       console.error("Error cargando proyectos:", error);
     }
@@ -28,7 +47,7 @@ export default function InversionistaDashboard({ navigation, userId }) {
 
   useEffect(() => {
     cargarProyectos();
-  }, [filtro]);
+  }, []);
 
   const handleMeEncanta = async (id, likes) => {
     const proyectoRef = doc(db, 'proyectos', id);
@@ -43,30 +62,36 @@ export default function InversionistaDashboard({ navigation, userId }) {
     }
   };
 
-  // Actualiza esta función para que tome el ID del emprendedor
-  const handleChats = (id_emprendedor) => {
-    navigation.navigate('Chats', { id_emprendedor }); 
+  const filteredProyectos = proyectos.filter((proyecto) =>
+    (proyecto.nombre && proyecto.nombre.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (proyecto.descripcion && proyecto.descripcion.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const handleChatScreen = (idEmprendedor) => {
+    navigation.navigate('Chat', { idEmprendedor });
   };
 
-  const filteredProyectos = proyectos.filter((proyecto) =>
-    proyecto.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    proyecto.descripcion.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleEmprendedorPerfil = (idEmprendedor) => {
+    navigation.navigate('VerPerfilEmprendedor', { idEmprendedor });
+  };
 
   const renderProyecto = ({ item }) => (
     <View style={styles.projectCard}>
       <View style={styles.projectHeader}>
-        {item.fotoPerfil ? (
+        {item.emprendedor?.fotoPerfil ? (
           <Image
-            source={{ uri: item.fotoPerfil }}
+            source={{ uri: item.emprendedor.fotoPerfil }}
             style={styles.avatar}
           />
         ) : (
           <View style={styles.placeholderImage} />
         )}
-        <Text style={styles.projectAuthor}>{item.nombre}</Text>
+        <Text style={styles.projectAuthor}>{item.emprendedor?.nombre1 || 'Desconocido'}</Text>
+        <Text style={styles.projectAuthor}>{item.emprendedor?.apellido1 || 'Desconocido'}</Text>
       </View>
+      <Text style={styles.projectNombre}>{item.nombre}</Text>
       <Text style={styles.projectDescription}>{item.descripcion}</Text>
+
       <View style={styles.projectFooter}>
         <TouchableOpacity onPress={() => handleMeEncanta(item.id, item.likes)}>
           <View style={styles.likesContainer}>
@@ -74,13 +99,13 @@ export default function InversionistaDashboard({ navigation, userId }) {
             <Text style={styles.likesText}>{item.likes || 0} Me encanta</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleChats(item.id_emprendedor)}>
+        <TouchableOpacity onPress={() => handleChatScreen(item.id_emprendedor)}>
           <View style={styles.chatContainer}>
             <MaterialCommunityIcons name="message" size={24} color="#1E90FF" />
             <Text style={styles.chatText}>Chat</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Perfil', { userId: item.id })}>
+        <TouchableOpacity onPress={() => handleEmprendedorPerfil(item.id_emprendedor)}>
           <Text style={styles.profileLink}>Ver perfil</Text>
         </TouchableOpacity>
       </View>
@@ -92,39 +117,50 @@ export default function InversionistaDashboard({ navigation, userId }) {
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient 
+      colors={['#B8CDD6', '#FFFFFF']} 
+      style={styles.container}
+    >
       <Image source={require('../../assets/icon/LogoStartCap.png')} style={styles.backgroundImage} />
 
-      {/* Barra de notificaciones y búsqueda */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.notificationIcon} onPress={() => navigation.navigate('Notificaciones')}>
-          <MaterialCommunityIcons name="bell" size={28} color="#003366" />
-        </TouchableOpacity>
-        <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={24} color="#666666" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar proyectos..."
-            value={searchQuery}
-            onChangeText={(text) => setSearchQuery(text)}
-          />
+        <View style={styles.topBarContent}>
+          
+
+          <View style={styles.searchContainer}>
+            <MaterialCommunityIcons name="magnify" size={24} color="#666666" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar proyectos..."
+              value={searchQuery}
+              onChangeText={(text) => setSearchQuery(text)}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.notificationIcon} onPress={() => navigation.navigate('Notificaciones')}>
+            <MaterialCommunityIcons name="bell" size={28} color="#003366" />
+            <Text style={styles.navText}>Notificaciones</Text>
+          </TouchableOpacity>
+
+          <View style={styles.navItemsContainer}>
+            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Chat')}>
+              <MaterialCommunityIcons name="message-outline" size={28} color="#003366" />
+              <Text style={styles.navText}>Chats</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Perfil')}>
+              <MaterialCommunityIcons name="account-outline" size={28} color="#003366" />
+              <Text style={styles.navText}>Perfil</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('CerrarSesion')}>
+            <Entypo name="log-out" size={26} color="#003366" />
+              <Text style={styles.navText}>Cerrar Sesión</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-
-      {/* Barra de navegación compacta para Chats y Perfil */}
-      <View style={styles.navbar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Chats')}>
-          <MaterialCommunityIcons name="message-outline" size={24} color="#003366" />
-          <Text style={styles.navText}>Chats</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Perfil')}>
-          <MaterialCommunityIcons name="account-outline" size={24} color="#003366" />
-          <Text style={styles.navText}>Perfil</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Lista de proyectos */}
+      
       <FlatList
         data={filteredProyectos}
         renderItem={renderProyecto}
@@ -132,14 +168,15 @@ export default function InversionistaDashboard({ navigation, userId }) {
         contentContainerStyle={styles.projectsList}
         ListEmptyComponent={<Text>No se encontraron proyectos</Text>}
       />
-    </View>
+    </LinearGradient>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
   },
   backgroundImage: {
     position: 'absolute',
@@ -149,12 +186,14 @@ const styles = StyleSheet.create({
     opacity: 0.1,
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 10,
     paddingVertical: 5,
     backgroundColor: '#FFFFFF',
+  },
+  topBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   notificationIcon: {
     padding: 5,
@@ -165,8 +204,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 25,
     flex: 1,
-    marginLeft: 10,
+    marginHorizontal: 10,
     paddingHorizontal: 10,
+    height: 40,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -176,7 +216,8 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     paddingLeft: 10,
-    color: '#666666',
+    color: '#ffffff',
+    height: 40,
   },
   projectsList: {
     padding: 20,
@@ -207,12 +248,11 @@ const styles = StyleSheet.create({
   projectAuthor: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333333',
   },
   projectDescription: {
     fontSize: 14,
     color: '#666666',
-    marginBottom: 10,
+    marginVertical: 10,
   },
   projectFooter: {
     flexDirection: 'row',
@@ -223,44 +263,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  likesText: {
+    marginLeft: 5,
+  },
   chatContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  likesText: {
-    marginLeft: 5,
-    color: '#666666',
-    fontSize: 14,
-  },
   chatText: {
-    color: '#1E90FF',
-    fontSize: 14,
-    fontWeight: 'bold',
+    marginLeft: 5,
   },
   profileLink: {
-    color: '#1E90FF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  navbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 5,
-    backgroundColor: '#FFFFFF',
-    borderBottomColor: '#EEEEEE',
-    borderBottomWidth: 1,
-  },
-  navItem: {
-    alignItems: 'center',
-  },
-  navText: {
-    fontSize: 12,
-    color: '#003366',
-    marginTop: 2,
+    color: '#005EB8',
   },
   loading: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  navItemsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  navItem: {
+    marginLeft: 15,
+    alignItems: 'center',
+  },
+  navText: {
+    fontSize: 12,
+  },
+  placeholderImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E0E0E0',
+    marginRight: 10,
   },
 });

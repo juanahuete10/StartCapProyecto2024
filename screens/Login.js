@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient'; // Importa LinearGradient
 import { auth, db } from '../firebase/firebaseconfig';  
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
-import { query, collection, where, getDocs } from 'firebase/firestore'; 
+import { doc, getDoc } from 'firebase/firestore'; 
 
 const Login = () => {
   const navigation = useNavigation();
@@ -20,14 +21,13 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password); 
       const user = userCredential.user; 
 
-      const usersQuery = query(collection(db, 'usuarios'), where('email', '==', user.email)); 
-      const usersSnapshot = await getDocs(usersQuery); 
+      // Busca el usuario en la colección 'usuarios' usando el uid
+      const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
 
-      if (!usersSnapshot.empty) { 
-        const userData = usersSnapshot.docs[0].data(); 
+      if (userDoc.exists()) { 
+        const userData = userDoc.data(); 
         const userRole = userData.rol;
 
-        
         switch (userRole) {
           case 'Administrador':
             navigation.reset({
@@ -38,13 +38,13 @@ const Login = () => {
           case 'Emprendedor':
             navigation.reset({
               index: 0,
-              routes: [{ name: 'EmprendedorDashboard', params: { emprendedorId: usersSnapshot.docs[0].id } }],
+              routes: [{ name: 'EmprendedorDashboard', params: { emprendedorId: user.uid } }],
             });
             break;
           case 'Inversionista':
             navigation.reset({
               index: 0,
-              routes: [{ name: 'InversionistaDashboard', params: { inversionistaId: usersSnapshot.docs[0].id } }],
+              routes: [{ name: 'InversionistaDashboard', params: { inversionistaId: user.uid } }],
             });
             break;
           default:
@@ -55,7 +55,7 @@ const Login = () => {
         Alert.alert('Error', 'No se encontró información del usuario en la base de datos'); 
       } 
 
-  
+     
       setEmail(''); 
       setPassword(''); 
     } catch (error) { 
@@ -65,7 +65,10 @@ const Login = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient 
+      colors={['#B8CDD6', '#FFFFFF']} // Degradado de color
+      style={styles.container}
+    >
       <Image source={require('../assets/icon/LogoStartCap.png')} style={styles.logo} />
       <TextInput
         style={styles.input}
@@ -88,7 +91,7 @@ const Login = () => {
       <Text style={styles.infoText}>
         ¿No tienes una cuenta? <Text style={styles.linkText} onPress={() => navigation.navigate('Registro')}>Regístrate aquí</Text>
       </Text>
-    </View>
+    </LinearGradient>
   );
 };
 
@@ -97,7 +100,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F7F9FC',
     padding: 20,
   },
   logo: {
@@ -149,4 +151,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Login;
+export default Login; 

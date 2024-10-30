@@ -9,12 +9,29 @@ export default function ExploracionProyecto() {
 
   useEffect(() => {
     const obtenerProyectos = async () => {
-      const q = query(collection(db, 'proyectos'), where('sector', '==', filtro));
-      const querySnapshot = await getDocs(q);
-      const proyectosFiltrados = querySnapshot.docs.map(doc => doc.data());
-      setProyectos(proyectosFiltrados);
+      try {
+        let q;
+
+        if (filtro) {
+          // Si hay un filtro, hacemos la consulta por sector
+          q = query(collection(db, 'proyectos'), where('sector', '==', filtro));
+        } else {
+          // Si no hay filtro, obtenemos todos los proyectos
+          q = collection(db, 'proyectos');
+        }
+
+        const querySnapshot = await getDocs(q);
+        const proyectosFiltrados = querySnapshot.docs.map(doc => ({
+          id: doc.id, // Incluye el ID del documento
+          ...doc.data()
+        }));
+
+        setProyectos(proyectosFiltrados);
+      } catch (error) {
+        console.error('Error al obtener proyectos:', error);
+      }
     };
-    
+
     obtenerProyectos();
   }, [filtro]);
 
@@ -27,6 +44,7 @@ export default function ExploracionProyecto() {
       />
       <FlatList
         data={proyectos}
+        keyExtractor={item => item.id} // Usa el ID como clave
         renderItem={({ item }) => (
           <TouchableOpacity>
             <Text>{item.nombreProyecto}</Text>

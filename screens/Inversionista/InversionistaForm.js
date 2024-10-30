@@ -41,7 +41,7 @@ const InversionistaForm = ({ navigation }) => {
     setApellido2('');
     setCedula('');
     setGenero('');
-    setFechaNac(new Date()); // Resetear a la fecha actual
+    setFechaNac(new Date());
     setLocalidad('');
     setDescripcion('');
     setPreferencia('');
@@ -49,6 +49,11 @@ const InversionistaForm = ({ navigation }) => {
   };
 
   const guardarInversionista = async () => {
+    if (!auth.currentUser) {
+      Alert.alert("Error", "Usuario no autenticado.");
+      return;
+    }
+
     if (!nombre1 || !apellido1 || !apellido2 || !cedula || !genero || !localidad || !descripcion || !preferencia) {
       Alert.alert("Error", "Por favor completa todos los campos requeridos.");
       return;
@@ -60,11 +65,11 @@ const InversionistaForm = ({ navigation }) => {
     }
 
     try {
-      
-      const inversionistaRef = doc(db, "inversionistas", "id_" + Date.now().toString()); // Genera un ID único
+      const uid = auth.currentUser.uid; // Obtener el UID del usuario autenticado
+      const inversionistaRef = doc(db, "inversionistas", uid); // Usar el UID del usuario autenticado
 
       await setDoc(inversionistaRef, {
-        id_inversionista: inversionistaRef.id, 
+        id_inversionista: uid, // Guardar el UID como ID del inversionista
         nombre1,
         nombre2,
         apellido1,
@@ -85,7 +90,7 @@ const InversionistaForm = ({ navigation }) => {
       navigation.navigate('InversionistaDashboard');
     } catch (error) {
       console.error("Error al guardar inversionista:", error);
-      Alert.alert("Hubo un error al guardar el inversionista.");
+      Alert.alert("Hubo un error al guardar el inversionista. Detalles: " + error.message);
     }
   };
 
@@ -161,7 +166,7 @@ const InversionistaForm = ({ navigation }) => {
 
       <Text style={styles.label}>Fecha de Nacimiento:</Text>
       <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
-        <Text style={{ color: '#000000', fontSize: 16 }}>
+        <Text style={styles.dateText}>
           {fecha_nac.toISOString().split('T')[0]} {/* Mostrar la fecha en formato YYYY-MM-DD */}
         </Text>
       </TouchableOpacity>
@@ -180,7 +185,6 @@ const InversionistaForm = ({ navigation }) => {
       <Text style={styles.label}>Descripción:</Text>
       <TextInput style={styles.input} value={descripcion} onChangeText={setDescripcion} />
 
-      {/* Mostrar la sección de preferencias siempre */}
       <Text style={styles.label}>Preferencias:</Text>
       <Picker
         selectedValue={preferencia}
@@ -210,7 +214,7 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'linear-gradient(to bottom, #E0F7FA 0%, #FFEBEE 100%)', // Color de fondo degradado
   },
   label: {
     fontSize: 16,
@@ -219,39 +223,46 @@ const styles = StyleSheet.create({
     color: '#005EB8',
     marginVertical: 8,
     alignSelf: 'flex-start',
-    marginLeft: 10,
   },
   input: {
-    width: '90%',
-    borderWidth: 2,
-    borderColor: '#005EB8',
-    borderRadius: 8,
+    width: '100%',
     padding: 10,
-    marginBottom: 10,
+    borderColor: '#005EB8',
+    borderWidth: 1,
+    borderRadius: 5,
     backgroundColor: '#FFFFFF',
+    marginBottom: 12,
   },
   fotoPerfil: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   selectPhotoText: {
     color: '#005EB8',
+    marginBottom: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+  },
+  dateText: {
+    color: '#000000',
+    padding: 10,
+    borderColor: '#005EB8',
+    borderWidth: 1,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
   },
   button: {
     backgroundColor: '#005EB8',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 20,
-    width: '90%',
+    borderRadius: 5,
+    padding: 15,
+    width: '100%',
     alignItems: 'center',
   },
   buttonText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

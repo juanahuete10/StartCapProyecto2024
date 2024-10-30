@@ -5,7 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import Home from './screens/Home';
-import Chats from './screens/Inversionista/Chats';
+import Mensaje from './screens/Inversionista/Mensaje';
 import SeleccionPerfil from './screens/SeleccionPerfil';
 import Registro from './screens/Registro';
 import InversionistaForm from './screens/Inversionista/InversionistaForm';
@@ -19,9 +19,13 @@ import Proyectos from './screens/Emprendedor/Proyectos';
 import InversionistaDashboard from './screens/Inversionista/InversionistaDashboard';
 import Perfil from './screens/Inversionista/Perfil';
 import Login from './screens/Login';
-import ChatE from './screens/Emprendedor/ChatE';
-import MessageInput from './screens/MessageInput';
 import ListarChats from './screens/Inversionista/ListarChats';
+import MisProyectos from './screens/Emprendedor/MisProyectos';
+import Chats from './screens/Inversionista/Chat';
+import Chat from './screens/Inversionista/Chat';
+import VerPerfilEmprendedor from './screens/Emprendedor/VerPerfilEmprendedor';
+
+
 
 // Crear un Stack Navigator para las funcionalidades de administración
 const AdminStack = createStackNavigator();
@@ -69,29 +73,39 @@ function MyTabs() {
           ),
         }}
       />
-       <Tab.Screen
-        name='Chats'
-        component={Chats} // Agrega el componente Chat aquí
+      
+      <Tab.Screen
+        name='EmprendedorPerfil'
+        component={EmprendededorPerfil}
         options={{
-          tabBarLabel: 'Chats',
+          tabBarLabel: 'Perfil',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account-tie" size={size} color={color} />
+          ),
+        }}
+      />
+
+       <Tab.Screen
+        name='Mensaje'
+        component={Mensaje} 
+        options={{
+          tabBarLabel: 'Mensaje',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chats" size={size} color={color} />
           ),
         }}
       />
-      
-      <Tab.Screen
-        name='MessageInput'
-        component={MessageInput}
+       <Tab.Screen
+        name='MisProyectos'
+        component={MisProyectos}
         options={{
-          headerShown: false,
-          tabBarLabel: 'MessageInout',
+          tabBarLabel: 'MisProyectos',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="Message" size={size} color={color} />
+            <MaterialCommunityIcons name="projects" size={size} color={color} />
           ),
         }}
       />
-
+      
       <Tab.Screen
         name='SeleccionPerfil'
         component={SeleccionPerfil}
@@ -102,6 +116,10 @@ function MyTabs() {
           ),
         }}
       />
+
+      
+
+
       <Tab.Screen
         name='Login'
         component={Login}
@@ -187,15 +205,37 @@ function MyTabs() {
         }}
       />
       <Tab.Screen
-        name='ChatE'
-        component={ChatE} 
+        name='Chat'
+        component={Chat} 
         options={{
-          tabBarLabel: 'ChatE',
+          tabBarLabel: 'Chat',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chats" size={size} color={color} />
           ),
         }}
       />
+       <Tab.Screen
+        name='VerPerfilEmprendedor'
+        component={VerPerfilEmprendedor} 
+        options={{
+          tabBarLabel: 'VerPerfilEmprendedor',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="chats" size={size} color={color} />
+          ),
+        }}
+      />
+      
+      <Tab.Screen
+        name='DetalleMensaje'
+        component={DetalleMensaje} 
+        options={{
+          tabBarLabel: 'DetalleMensaje',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="chats" size={size} color={color} />
+          ),
+        }}
+      />
+
       
       <Tab.Screen
         name='ListarChats'
@@ -207,8 +247,7 @@ function MyTabs() {
           ),
         }}
       />
-
-
+      
 
       <Tab.Screen
         name='ExploracionProyecto'
@@ -221,6 +260,18 @@ function MyTabs() {
           ),
         }}
       />
+      
+      <Tab.Screen
+        name='CerrarSesion'
+        component={CerrarSesion} 
+        options={{
+          tabBarLabel: 'CerrarSesion',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="chats" size={size} color={color} />
+          ),
+        }}
+      />
+
       <Tab.Screen
         name='Admin'
         component={AdminNavigator}

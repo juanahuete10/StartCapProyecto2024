@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Entypo from '@expo/vector-icons/Entypo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, firestore } from '../../firebase/firebaseconfig';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase/firebaseconfig';
+import { LinearGradient } from 'expo-linear-gradient';
+import { auth } from '../../firebase/firebaseconfig'; // Asegúrate de importar auth correctamente
 
 export default function EmprendedorDashboard({ navigation }) {
   const [formCompleted, setFormCompleted] = useState(false);
@@ -21,15 +25,20 @@ export default function EmprendedorDashboard({ navigation }) {
     const fetchUserRol = async () => {
       try {
         const user = auth.currentUser;
-        if (user) {
-          const userDoc = await firestore.collection('usuarios').doc(user.uid).get();
-          if (userDoc.exists) {
-            const userData = userDoc.data();
-            setRol(userData.rol);
-          }
+        if (!user) {
+          Alert.alert('Error', 'Usuario no autenticado. Por favor, inicie sesión.');
+          navigation.navigate('Login');
+          return;
+        }
+
+        const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
+        if (userDoc.exists()) {
+          setRol(userDoc.data().rol);
+        } else {
+          Alert.alert('Error', 'El documento del usuario no existe.');
         }
       } catch (error) {
-        Alert.alert('Error', 'No se pudo obtener el rol del usuario.');
+        Alert.alert('Error', 'No se pudo obtener el rol del usuario: ' + error.message);
       }
     };
 
@@ -46,44 +55,60 @@ export default function EmprendedorDashboard({ navigation }) {
   };
 
   return (
-    <ImageBackground 
-      source={require('../../assets/icon/LogoStartCap.png')} 
-      style={styles.backgroundImage}
-      resizeMode="contain" 
+    <LinearGradient 
+      colors={['#B8CDD6', '#FFFFFF']} 
+      style={styles.container}
     >
-      {/* Barra de título en la parte superior */}
       <View style={styles.titleContainer}>
         <Text style={styles.title}>StartCap, Tu mejor opción</Text>
       </View>
 
-      {/* Barra de botones al fondo */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Proyectos')}>
-          <MaterialCommunityIcons name="file-plus" size={30} color="#0e5575" />
+          <MaterialCommunityIcons name="file-plus" size={30} color="#fff" />
+          <Text style={styles.buttonText}>Proyectos</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Notificaciones')}>
-          <MaterialCommunityIcons name="bell-outline" size={30} color="#0e5575" />
+          <MaterialCommunityIcons name="bell-outline" size={26} color="#fff" />
+          <Text style={styles.buttonText}>Notificaciones</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Chats')}>
-          <MaterialCommunityIcons name="chat-outline" size={30} color="#0e5575" />
+        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('ChatE')}>
+          <MaterialCommunityIcons name="chat-outline" size={26} color="#fff" />
+          <Text style={styles.buttonText}>Chat</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('EmprendedorPerfil')}>
+          <MaterialCommunityIcons name="account-outline" size={26} color="#fff" />
+          <Text style={styles.buttonText}>Perfil</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('MisProyectos')}>
+          <MaterialCommunityIcons name="briefcase-outline" size={26} color="#fff" />
+          <Text style={styles.buttonText}>Mis Proyectos</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('CerrarSesion')}>
+          <Entypo name="log-out" size={26} color="#fff" />
+          <Text style={styles.buttonText}>Cerrar Sesión</Text>
         </TouchableOpacity>
 
         {rol === 'emprendedor' && (
           <TouchableOpacity style={styles.button} onPress={() => handleNavigation('EmprendedorDashboard')}>
-            <MaterialCommunityIcons name="view-dashboard" size={30} color="#0e5575" />
+            <MaterialCommunityIcons name="view-dashboard-outline" size={26} color="#fff" />
+            <Text style={styles.buttonText}>Dashboard</Text>
           </TouchableOpacity>
         )}
       </View>
-    </ImageBackground>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  backgroundImage: {
+  container: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   titleContainer: {
@@ -95,18 +120,27 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#0e5575',
+    color: '#fff',
   },
   buttonContainer: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     width: '100%',
-    justifyContent: 'space-around', 
-    position: 'absolute', 
-    bottom: 20, 
+    position: 'absolute',
+    bottom: 20,
+    paddingHorizontal: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 15,
   },
   button: {
     alignItems: 'center',
-    backgroundColor: 'transparent', 
-    padding: 15,
+    paddingVertical: 8,
+    width: '13%', 
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 5,
   },
 });
