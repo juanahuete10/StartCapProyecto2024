@@ -21,7 +21,6 @@ import Perfil from './screens/Inversionista/Perfil';
 import Login from './screens/Login';
 import ListarChats from './screens/Inversionista/ListarChats';
 import MisProyectos from './screens/Emprendedor/MisProyectos';
-import Chats from './screens/Inversionista/Chat';
 import Chat from './screens/Inversionista/Chat';
 import VerPerfilEmprendedor from './screens/Emprendedor/VerPerfilEmprendedor';
 

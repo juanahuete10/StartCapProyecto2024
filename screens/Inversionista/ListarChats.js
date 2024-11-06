@@ -9,8 +9,8 @@ const ListarChats = ({ navigation }) => {
   const auth = getAuth();
 
   useEffect(() => {
-    const userId = auth.currentUser?.uid; // Obtén el ID del usuario autenticado
-    const chatsRef = collection(db, 'chats'); // Asegúrate de que esta colección exista
+    const userId = auth.currentUser?.uid; 
+    const chatsRef = collection(db, 'messages'); 
 
     const unsubscribe = onSnapshot(chatsRef, (querySnapshot) => {
       const chatList = [];
@@ -35,7 +35,7 @@ const ListarChats = ({ navigation }) => {
         data={chats}
         renderItem={({ item }) => (
           <View style={styles.chatItem}>
-            <Text>{item.chatName || item.id}</Text> {/* Muestra el nombre del chat */}
+            <Text>{item.chatName || item.id}</Text>
             <Button title="Abrir Chat" onPress={() => goToChat(item)} />
           </View>
         )}

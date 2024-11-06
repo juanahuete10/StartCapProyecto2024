@@ -10,22 +10,20 @@ const Chat = ({ route }) => {
 
   const { id_inversionista, id_emprendedor } = route.params || {};
 
-  // Verificar parámetros recibidos
   useEffect(() => {
-    console.log('route.params:', route.params); // Muestra todos los parámetros recibidos
+    console.log('route.params:', route.params); 
     if (!id_inversionista || !id_emprendedor) {
       Alert.alert('Error', 'ID de inversionista o emprendedor faltante');
     }
   }, [route.params]);
 
-  // Suscripción para escuchar cambios en la colección de mensajes
   useEffect(() => {
     if (!id_inversionista || !id_emprendedor) {
       console.log('ID de inversionista o emprendedor faltante');
       return;
     }
 
-    const messagesRef = collection(db, 'chats');
+    const messagesRef = collection(db, 'messages');
     const chatQuery = query(
       messagesRef,
       where("id_inversionista", "==", id_inversionista),
@@ -34,7 +32,6 @@ const Chat = ({ route }) => {
 
     const unsubscribe = onSnapshot(chatQuery, (snapshot) => {
       const messagesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // Ordenar mensajes por timestamp
       setMessages(messagesList.sort((a, b) => a.timestamp - b.timestamp));
     });
 
@@ -53,7 +50,7 @@ const Chat = ({ route }) => {
     }
 
     try {
-      await addDoc(collection(db, 'chats'), {
+      await addDoc(collection(db, 'messages'), {
         text: newMessage,
         senderId: auth.currentUser.uid,
         timestamp: new Date(),

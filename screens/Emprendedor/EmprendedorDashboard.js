@@ -74,7 +74,7 @@ export default function EmprendedorDashboard({ navigation }) {
           <Text style={styles.buttonText}>Notificaciones</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('ChatE')}>
+        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Chat')}>
           <MaterialCommunityIcons name="chat-outline" size={26} color="#fff" />
           <Text style={styles.buttonText}>Chat</Text>
         </TouchableOpacity>

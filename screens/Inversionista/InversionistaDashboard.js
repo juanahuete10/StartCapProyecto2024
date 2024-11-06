@@ -19,12 +19,8 @@ export default function InversionistaDashboard({ navigation }) {
       const proyectosData = await Promise.all(
         querySnapshot.docs.map(async (projectDoc) => {
           const projectData = projectDoc.data();
-          console.log("Cargando proyecto:", projectData);
 
-          if (!projectData.id_emprendedor) {
-            console.error("ID de emprendedor faltante para el proyecto:", projectDoc.id);
-            return null;
-          }
+          if (!projectData.id_emprendedor) return null;
 
           const emprendedorRef = doc(db, 'emprendedor', projectData.id_emprendedor);
           const emprendedorSnap = await getDoc(emprendedorRef);
@@ -78,36 +74,41 @@ export default function InversionistaDashboard({ navigation }) {
   const renderProyecto = ({ item }) => (
     <View style={styles.projectCard}>
       <View style={styles.projectHeader}>
-        {item.emprendedor?.fotoPerfil ? (
+        <View style={styles.profileContainer}>
           <Image
-            source={{ uri: item.emprendedor.fotoPerfil }}
+            source={{ uri: item.emprendedor?.foto_perfil || 'https://via.placeholder.com/150' }}
             style={styles.avatar}
           />
-        ) : (
-          <View style={styles.placeholderImage} />
-        )}
-        <Text style={styles.projectAuthor}>{item.emprendedor?.nombre1 || 'Desconocido'}</Text>
-        <Text style={styles.projectAuthor}>{item.emprendedor?.apellido1 || 'Desconocido'}</Text>
+          <Text style={styles.projectAuthor}>
+            {item.emprendedor?.nombre1 || 'Desconocido'} {item.emprendedor?.apellido1 || ''}
+          </Text>
+        </View>
+
+        <Text style={styles.projectNombre}>{item.nombre}</Text>
+        <Text style={styles.projectDescription}>{item.descripcion}</Text>
       </View>
-      <Text style={styles.projectNombre}>{item.nombre}</Text>
-      <Text style={styles.projectDescription}>{item.descripcion}</Text>
 
       <View style={styles.projectFooter}>
+        {/* Botón de Me encanta */}
         <TouchableOpacity onPress={() => handleMeEncanta(item.id, item.likes)}>
           <View style={styles.likesContainer}>
             <MaterialCommunityIcons name="heart" size={24} color="#E63946" />
             <Text style={styles.likesText}>{item.likes || 0} Me encanta</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleChatScreen(item.id_emprendedor)}>
-          <View style={styles.chatContainer}>
-            <MaterialCommunityIcons name="message" size={24} color="#1E90FF" />
-            <Text style={styles.chatText}>Chat</Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleEmprendedorPerfil(item.id_emprendedor)}>
-          <Text style={styles.profileLink}>Ver perfil</Text>
-        </TouchableOpacity>
+
+        {/* Íconos de Chat y Ver Perfil debajo del proyecto */}
+        <View style={styles.iconContainer}>
+          <TouchableOpacity onPress={() => navigation.navigate('Chat')} style={styles.iconButton}>
+            <MaterialCommunityIcons name="message" size={20} color="#1E90FF" />
+            <Text style={styles.navText}>Chat</Text>
+
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleEmprendedorPerfil(item.id_emprendedor)} style={styles.iconButton}>
+            <MaterialCommunityIcons name="account-outline" size={20} color="#1E90FF" />
+            <Text style={styles.navText}>Ver Perfil</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -117,18 +118,13 @@ export default function InversionistaDashboard({ navigation }) {
   }
 
   return (
-    <LinearGradient 
-      colors={['#B8CDD6', '#FFFFFF']} 
-      style={styles.container}
-    >
+    <LinearGradient colors={['#B8CDD6', '#FFFFFF']} style={styles.container}>
       <Image source={require('../../assets/icon/LogoStartCap.png')} style={styles.backgroundImage} />
 
       <View style={styles.topBar}>
         <View style={styles.topBarContent}>
-          
-
           <View style={styles.searchContainer}>
-            <MaterialCommunityIcons name="magnify" size={24} color="#666666" />
+            <MaterialCommunityIcons name="magnify" size={24} color="#FFFFFF" />
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar proyectos..."
@@ -138,29 +134,27 @@ export default function InversionistaDashboard({ navigation }) {
           </View>
 
           <TouchableOpacity style={styles.notificationIcon} onPress={() => navigation.navigate('Notificaciones')}>
-            <MaterialCommunityIcons name="bell" size={28} color="#003366" />
+            <MaterialCommunityIcons name="bell" size={28} color="#1E90FF" />
             <Text style={styles.navText}>Notificaciones</Text>
           </TouchableOpacity>
 
           <View style={styles.navItemsContainer}>
             <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Chat')}>
-              <MaterialCommunityIcons name="message-outline" size={28} color="#003366" />
+              <MaterialCommunityIcons name="message-outline" size={28} color="#1E90FF" />
               <Text style={styles.navText}>Chats</Text>
             </TouchableOpacity>
-            
             <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Perfil')}>
-              <MaterialCommunityIcons name="account-outline" size={28} color="#003366" />
+              <MaterialCommunityIcons name="account-outline" size={28} color="#1E90FF" />
               <Text style={styles.navText}>Perfil</Text>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('CerrarSesion')}>
-            <Entypo name="log-out" size={26} color="#003366" />
+              <Entypo name="log-out" size={26} color="#1E90FF" />
               <Text style={styles.navText}>Cerrar Sesión</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
-      
+
       <FlatList
         data={filteredProyectos}
         renderItem={renderProyecto}
@@ -171,8 +165,6 @@ export default function InversionistaDashboard({ navigation }) {
     </LinearGradient>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -197,27 +189,22 @@ const styles = StyleSheet.create({
   },
   notificationIcon: {
     padding: 5,
+    alignItems: "center"
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E90FF',
     borderRadius: 25,
     flex: 1,
     marginHorizontal: 10,
     paddingHorizontal: 10,
     height: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
   },
   searchInput: {
     flex: 1,
     paddingLeft: 10,
-    color: '#ffffff',
-    height: 40,
+    color: '#FFFFFF',
   },
   projectsList: {
     padding: 20,
@@ -235,6 +222,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   projectHeader: {
+    marginBottom: 10,
+  },
+  profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
@@ -247,6 +237,11 @@ const styles = StyleSheet.create({
   },
   projectAuthor: {
     fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 10,
+  },
+  projectNombre: {
+    fontSize: 18,
     fontWeight: 'bold',
   },
   projectDescription: {
@@ -265,38 +260,30 @@ const styles = StyleSheet.create({
   },
   likesText: {
     marginLeft: 5,
+    fontSize: 14,
+    color: '#666666',
   },
-  chatContainer: {
+  iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  chatText: {
-    marginLeft: 5,
-  },
-  profileLink: {
-    color: '#005EB8',
+  iconButton: {
+    paddingHorizontal: 10,
+    alignItems:"center"
   },
   loading: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   navItemsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
   navItem: {
-    marginLeft: 15,
     alignItems: 'center',
+    marginLeft: 10,
   },
   navText: {
     fontSize: 12,
-  },
-  placeholderImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E0E0E0',
-    marginRight: 10,
+    color: '#1E90FF',
   },
 });

@@ -19,15 +19,12 @@ import AdminPerfil from './screens/Administrador/AdminPerfil';
 import Proyectos from './screens/Emprendedor/Proyectos';
 import ListarProyectos from './screens/Emprendedor/ListarProyectos';
 import ListInversionistas from './screens/Inversionista/ListInversionistas';
-import ChatE from './screens/Emprendedor/ChatE';
 import ListarChats from './screens/Inversionista/ListarChats';
 import Perfil from './screens/Inversionista/Perfil';
 import EmprendededorPerfil from './screens/Emprendedor/EmprendedorPerfil';
 import MisProyectos from './screens/Emprendedor/MisProyectos';
-import Mensaje from './screens/Inversionista/Mensaje';
 import CerrarSesion from './screens/CerrarSesion';
 import Chat from './screens/Inversionista/Chat';
-import DetalleMensaje from './screens/Inversionista/DetalleMensaje';
 import VerPerfilEmprendedor from './screens/Emprendedor/VerPerfilEmprendedor';
 
 
@@ -45,8 +42,6 @@ export default function App() {
         <Stack.Screen name="Perfil" component={Perfil} />
         <Stack.Screen name="Notificaciones" component={Notificaciones} />
         <Stack.Screen name="InversionistaDashboard" component={InversionistaDashboard} />
-        <Stack.Screen name="Mensaje" component={Mensaje} />
-        <Stack.Screen name="ChatE" component={ChatE} />
         <Stack.Screen name="ExploracionProyecto" component={ExploracionProyecto} />
         <Stack.Screen name="EmprendedorForm" component={EmprendedorForm} />
         <Stack.Screen name="EmprendedorDashboard" component={EmprendedorDashboard} />
@@ -61,7 +56,6 @@ export default function App() {
         <Stack.Screen name="MisProyectos" component={MisProyectos} />
         <Stack.Screen name="CerrarSesion" component={CerrarSesion} />
         <Stack.Screen name="Chat" component={Chat} />
-        <Stack.Screen name="DetalleMensaje" component={DetalleMensaje} />
         <Stack.Screen name="VerPerfilEmprendedor" component={VerPerfilEmprendedor} />
        
        

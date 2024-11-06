@@ -1,0 +1,84 @@
+{
+    "usuarios": [
+      {
+        "id_usuario": "uid",
+        "nombre": "Nombre del usuario",
+        "contraseña": "Contraseña encriptada",
+        "rol": "Rol del usuario"
+      }
+    ],
+    
+    "emprendedores": [
+      {
+        "id_emprendedor": "uid",
+        "nombre1": "Nombre 1 del emprendedor",
+        "nombre2": "Nombre 2 del emprendedor",
+        "apellido1": "Apellido1 del emprendedor",
+        "apellido2": "Apellido2 del emprendedor",
+        "fecha_nac": "Fecha de nacimiento",
+        "cedula": "Número de cédula",
+        "genero": "Género",
+        "correo": "Correo electrónico",
+        "localidad": "Localidad",
+        "descripcion": "Descripción del emprendedor",
+        "foto_perfil": "URL de la foto de perfil",
+        "id_usuario": "uid"
+      }
+    ],
+    
+    "inversionistas": [
+      {
+        "id_inversionista": "uid",
+        "nombres": "Nombres del inversionista",
+        "apellidos": "Apellidos del inversionista",
+        "cedula": "Número de cédula",
+        "genero": "Género",
+        "fecha_nac":  "Fecha de nacimiento",
+        "correo": "Correo electrónico",
+        "localidad": "Localidad",
+        "descripcion": "Descripción del emprendedor",
+        "foto_perfil": "URL de la foto de perfil",
+        "preferencia": "Intereses del inversionista",
+        "id_usuario": "uid"
+      }
+    ],
+    
+    "proyectos": [
+      {
+        "id_proyecto": 1,
+        "nombre": "Nombre del proyecto",
+        "descripcion": "Descripción del proyecto",
+        "categoria": "Categoría del proyecto",
+        "ubicacion": "Ubicación del proyecto",
+        "id_emprend": "uid"
+      }
+    ],
+    
+    "chats": [
+      {
+        "id": 1,
+        "id_inversionista": "uid",
+        "id_emprendedor": "uid",
+        "contenido": "Mensaje de chat",
+        "fecha": "2024-09-10",
+        "hora": "12:00:00",
+        "estado": "Leído"
+      }
+    ],
+    
+    "notificaciones": [
+      {
+        "id_notificaciones": 1,
+        "contenido": "Contenido de la notificación",
+        "tipo_notif": "Tipo de notificación",
+        "fecha": "2024-09-10",
+        "hora": "12:00:00",
+        "id_emprend": "uid",
+        "id_invers": "uid"
+      }
+    ]
+    
+   
+    
+  }
+  
