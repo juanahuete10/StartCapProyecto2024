@@ -1,132 +1,106 @@
-import React, { useEffect, useState } from 'react';
-import { View, FlatList, TextInput, TouchableOpacity, StyleSheet, Text, Alert } from 'react-native';
-import { db, auth } from '../../firebase/firebaseconfig';
-import { collection, onSnapshot, addDoc, query, where } from 'firebase/firestore';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, Alert, ActivityIndicator } from 'react-native';
+import { GiftedChat } from 'react-native-gifted-chat';
+import { auth, db } from '../../firebase/firebaseconfig';
+import { collection, addDoc, query, onSnapshot, orderBy } from 'firebase/firestore';
 
-const Chat = ({ route }) => {
+const Chat = ({ route, navigation }) => {
+  const { otherUserId = '', otherUserRole = '' } = route.params || {};
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [chatId, setChatId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const { id_inversionista, id_emprendedor } = route.params || {};
-
-  useEffect(() => {
-    console.log('route.params:', route.params); 
-    if (!id_inversionista || !id_emprendedor) {
-      Alert.alert('Error', 'ID de inversionista o emprendedor faltante');
-    }
-  }, [route.params]);
+  // UID del usuario autenticado
+  const userId = auth.currentUser?.uid;
+  console.log("userId:", userId, "otherUserId:", otherUserId);
 
   useEffect(() => {
-    if (!id_inversionista || !id_emprendedor) {
-      console.log('ID de inversionista o emprendedor faltante');
-      return;
+    if (!userId || !otherUserId) {
+      Alert.alert("Error", "No se encontró el usuario con el que desea chatear.");
+      navigation.goBack();
+    } else {
+      createNewChat();
     }
+  }, [userId, otherUserId]);
 
-    const messagesRef = collection(db, 'messages');
-    const chatQuery = query(
-      messagesRef,
-      where("id_inversionista", "==", id_inversionista),
-      where("id_emprendedor", "==", id_emprendedor)
-    );
-
-    const unsubscribe = onSnapshot(chatQuery, (snapshot) => {
-      const messagesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMessages(messagesList.sort((a, b) => a.timestamp - b.timestamp));
-    });
-
-    return () => unsubscribe();
-  }, [id_inversionista, id_emprendedor]);
-
-  const sendMessage = async () => {
-    if (newMessage.trim() === '') {
-      Alert.alert('El mensaje no puede estar vacío');
-      return;
-    }
-
-    if (!id_inversionista || !id_emprendedor) {
-      Alert.alert('Error al enviar el mensaje', 'ID de inversionista o emprendedor faltante');
-      return;
-    }
-
+  const createNewChat = async () => {
     try {
-      await addDoc(collection(db, 'messages'), {
-        text: newMessage,
-        senderId: auth.currentUser.uid,
-        timestamp: new Date(),
-        id_inversionista,
-        id_emprendedor,
-      });
-
-      setNewMessage('');
+      const newChat = {
+        id_inversionista: otherUserRole === 'Inversionista' ? otherUserId : userId,
+        id_emprendedor: otherUserRole === 'Emprendedor' ? otherUserId : userId,
+        fecha: new Date(),
+        estado: 'No leído',
+      };
+      const chatDocRef = await addDoc(collection(db, 'chats'), newChat);
+      console.log("Chat creado con ID:", chatDocRef.id);
+      setChatId(chatDocRef.id);
+      setLoading(false);
     } catch (error) {
-      Alert.alert('Error al enviar el mensaje', error.message);
+      console.error("Error creando nuevo chat: ", error);
+      Alert.alert("No se pudo crear el chat. Inténtalo de nuevo.");
     }
   };
 
+  const onSend = useCallback(async (newMessages = []) => {
+    const newMessage = newMessages[0];
+    if (!userId || !chatId) return;
+
+    try {
+      const chatRef = collection(db, 'chats', chatId, 'messages');
+      await addDoc(chatRef, {
+        contenido: newMessage.text,
+        fecha: new Date(),
+        id_usuario: userId,
+        estado: 'No leído',
+      });
+      setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages));
+    } catch (error) {
+      console.error("Error al enviar mensaje: ", error);
+      Alert.alert("No se pudo enviar el mensaje. Inténtalo de nuevo.");
+    }
+  }, [chatId, userId]);
+
+  useEffect(() => {
+    if (chatId) {
+      const chatRef = collection(db, 'chats', chatId, 'messages');
+      const q = query(chatRef, orderBy('fecha', 'asc'));
+
+      const unsubscribe = onSnapshot(q, snapshot => {
+        const chatMessages = snapshot.docs.map(doc => ({
+          _id: doc.id,
+          text: doc.data().contenido,
+          createdAt: doc.data().fecha.toDate(),
+          user: {
+            _id: doc.data().id_usuario,
+          },
+        }));
+
+        console.log("Mensajes recibidos:", chatMessages);
+        setMessages(chatMessages);
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [chatId]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
   return (
-    <LinearGradient colors={['#B8CDD6', '#FFFFFF']} style={styles.container}>
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={[styles.message, item.senderId === auth.currentUser.uid ? styles.sent : styles.received]}>
-            <Text style={styles.messageText}>{item.text}</Text>
-          </View>
-        )}
+    <View style={{ flex: 1 }}>
+      <GiftedChat
+        messages={messages}
+        onSend={(messages) => onSend(messages)}
+        user={{ _id: userId }}
       />
-      <TextInput
-        style={styles.input}
-        value={newMessage}
-        onChangeText={setNewMessage}
-        placeholder="Escribe un mensaje..."
-      />
-      <TouchableOpacity onPress={sendMessage} style={styles.button}>
-        <Text style={styles.buttonText}>Enviar</Text>
-      </TouchableOpacity>
-    </LinearGradient>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 10,
-  },
-  message: {
-    marginBottom: 10,
-    padding: 10,
-    borderRadius: 10,
-    maxWidth: '70%',
-  },
-  sent: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#007BFF',
-  },
-  received: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#f0f0f0',
-  },
-  messageText: {
-    color: '#fff',
-  },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-  },
-});
 
 export default Chat;

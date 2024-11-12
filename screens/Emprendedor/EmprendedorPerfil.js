@@ -66,7 +66,6 @@ const EmprendedorPerfil = ({ navigation }) => {
     fecha_nac,
     localidad,
     descripcion,
-    preferencia,
     foto_perfil,
     email
   } = emprendedorData;
@@ -107,10 +106,7 @@ const EmprendedorPerfil = ({ navigation }) => {
           <FontAwesome name="info-circle" size={20} color="#005EB8" style={styles.icon} />
           <Text style={styles.label}>Descripción: {descripcion}</Text>
         </View>
-        <View style={styles.infoContainer}>
-          <FontAwesome name="star" size={20} color="#005EB8" style={styles.icon} />
-          <Text style={styles.label}>Preferencia: {preferencia}</Text>
-        </View>
+       
         <View style={styles.infoContainer}>
           <FontAwesome name="envelope" size={20} color="#005EB8" style={styles.icon} />
           <Text style={styles.label}>Email: {email}</Text>

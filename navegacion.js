@@ -23,6 +23,9 @@ import ListarChats from './screens/Inversionista/ListarChats';
 import MisProyectos from './screens/Emprendedor/MisProyectos';
 import Chat from './screens/Inversionista/Chat';
 import VerPerfilEmprendedor from './screens/Emprendedor/VerPerfilEmprendedor';
+import Ajustes from './screens/Emprendedor/Ajustes';
+import AcercaDe from './screens/Emprendedor/AcercaDe';
+import Ayuda from './screens/Emprendedor/Ayuda';
 
 
 
@@ -106,16 +109,26 @@ function MyTabs() {
       />
       
       <Tab.Screen
-        name='SeleccionPerfil'
-        component={SeleccionPerfil}
+        name='Ayuda'
+        component={Ayuda}
         options={{
-          tabBarLabel: 'Perfil',
+          tabBarLabel: 'Ayuda',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="account" size={size} color={color} />
+            <MaterialCommunityIcons name="projects" size={size} color={color} />
           ),
         }}
       />
 
+<Tab.Screen
+        name='AcercaDe'
+        component={AcercaDe}
+        options={{
+          tabBarLabel: 'AcercaDe',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="projects" size={size} color={color} />
+          ),
+        }}
+      />
       
 
 
@@ -265,6 +278,16 @@ function MyTabs() {
         component={CerrarSesion} 
         options={{
           tabBarLabel: 'CerrarSesion',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="chats" size={size} color={color} />
+          ),
+        }}
+      />
+        <Tab.Screen
+        name='Ajustes'
+        component={Ajustes} 
+        options={{
+          tabBarLabel: 'Ajustes',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chats" size={size} color={color} />
           ),

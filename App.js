@@ -26,6 +26,9 @@ import MisProyectos from './screens/Emprendedor/MisProyectos';
 import CerrarSesion from './screens/CerrarSesion';
 import Chat from './screens/Inversionista/Chat';
 import VerPerfilEmprendedor from './screens/Emprendedor/VerPerfilEmprendedor';
+import Ajustes from './screens/Emprendedor/Ajustes';
+import Ayuda from './screens/Emprendedor/Ayuda';
+import AcercaDe from './screens/Emprendedor/AcercaDe';
 
 
 const Stack = createStackNavigator();
@@ -57,6 +60,9 @@ export default function App() {
         <Stack.Screen name="CerrarSesion" component={CerrarSesion} />
         <Stack.Screen name="Chat" component={Chat} />
         <Stack.Screen name="VerPerfilEmprendedor" component={VerPerfilEmprendedor} />
+        <Stack.Screen name="Ajustes" component={Ajustes} />
+        <Stack.Screen name="Ayuda" component={Ayuda} />
+        <Stack.Screen name="AcercaDe" component={AcercaDe} />
        
        
       </Stack.Navigator>

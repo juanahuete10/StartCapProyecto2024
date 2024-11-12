@@ -18,7 +18,6 @@ export default function Registro({ navigation }) {
     const auth = getAuth();
     const db = getFirestore();
 
-   
     if (!email || !validarEmail(email)) {
       Alert.alert('Error', 'Por favor, introduce un correo electrónico válido.');
       return;
@@ -39,15 +38,17 @@ export default function Registro({ navigation }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user; 
 
-    
       await setDoc(doc(db, 'usuarios', user.uid), {
         email: user.email,
         rol: rol,
         id_usuario: user.uid 
       });
 
-      
-      navigation.navigate('SeleccionPerfil', { rol });
+      if (rol === 'Emprendedor') {
+        navigation.navigate('EmprendedorForm');
+      } else if (rol === 'Inversionista') {
+        navigation.navigate('InversionistaForm');
+      }
     } catch (error) {
       console.error('Error al registrar:', error.code, error.message);
       Alert.alert('Error', 'Error al registrar: ' + error.message);
@@ -82,7 +83,6 @@ export default function Registro({ navigation }) {
           placeholderTextColor="#B0BEC5"
         />
 
-        
         <Picker
           selectedValue={rol}
           style={styles.picker}

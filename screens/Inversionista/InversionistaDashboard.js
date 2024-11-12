@@ -19,7 +19,6 @@ export default function InversionistaDashboard({ navigation }) {
       const proyectosData = await Promise.all(
         querySnapshot.docs.map(async (projectDoc) => {
           const projectData = projectDoc.data();
-
           if (!projectData.id_emprendedor) return null;
 
           const emprendedorRef = doc(db, 'emprendedor', projectData.id_emprendedor);
@@ -33,7 +32,6 @@ export default function InversionistaDashboard({ navigation }) {
           };
         })
       );
-
       setProyectos(proyectosData.filter(Boolean));
     } catch (error) {
       console.error("Error cargando proyectos:", error);
@@ -49,10 +47,11 @@ export default function InversionistaDashboard({ navigation }) {
     const proyectoRef = doc(db, 'proyectos', id);
     try {
       await updateDoc(proyectoRef, { likes: (likes || 0) + 1 });
-      const updatedProyectos = proyectos.map((proyecto) =>
-        proyecto.id === id ? { ...proyecto, likes: (likes || 0) + 1 } : proyecto
+      setProyectos((prevProyectos) =>
+        prevProyectos.map((proyecto) =>
+          proyecto.id === id ? { ...proyecto, likes: (likes || 0) + 1 } : proyecto
+        )
       );
-      setProyectos(updatedProyectos);
     } catch (error) {
       console.error("Error al dar 'me encanta':", error);
     }
@@ -63,7 +62,7 @@ export default function InversionistaDashboard({ navigation }) {
     (proyecto.descripcion && proyecto.descripcion.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleChatScreen = (idEmprendedor) => {
+  const handleChat = (idEmprendedor) => {
     navigation.navigate('Chat', { idEmprendedor });
   };
 
@@ -89,7 +88,6 @@ export default function InversionistaDashboard({ navigation }) {
       </View>
 
       <View style={styles.projectFooter}>
-        {/* Botón de Me encanta */}
         <TouchableOpacity onPress={() => handleMeEncanta(item.id, item.likes)}>
           <View style={styles.likesContainer}>
             <MaterialCommunityIcons name="heart" size={24} color="#E63946" />
@@ -97,12 +95,10 @@ export default function InversionistaDashboard({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* Íconos de Chat y Ver Perfil debajo del proyecto */}
         <View style={styles.iconContainer}>
           <TouchableOpacity onPress={() => navigation.navigate('Chat')} style={styles.iconButton}>
             <MaterialCommunityIcons name="message" size={20} color="#1E90FF" />
             <Text style={styles.navText}>Chat</Text>
-
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleEmprendedorPerfil(item.id_emprendedor)} style={styles.iconButton}>
             <MaterialCommunityIcons name="account-outline" size={20} color="#1E90FF" />
@@ -165,6 +161,7 @@ export default function InversionistaDashboard({ navigation }) {
     </LinearGradient>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

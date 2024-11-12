@@ -4,9 +4,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Entypo from '@expo/vector-icons/Entypo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../firebase/firebaseconfig';
+import { db, auth } from '../../firebase/firebaseconfig';
 import { LinearGradient } from 'expo-linear-gradient';
-import { auth } from '../../firebase/firebaseconfig'; // Asegúrate de importar auth correctamente
 
 export default function EmprendedorDashboard({ navigation }) {
   const [formCompleted, setFormCompleted] = useState(false);
@@ -46,56 +45,43 @@ export default function EmprendedorDashboard({ navigation }) {
     fetchUserRol();
   }, []);
 
-  const handleNavigation = (screen) => {
-    if (!formCompleted && screen !== 'EmprendedorForm') {
-      navigation.navigate('EmprendedorForm');
-    } else {
-      navigation.navigate(screen);
-    }
-  };
-
   return (
-    <LinearGradient 
-      colors={['#B8CDD6', '#FFFFFF']} 
-      style={styles.container}
-    >
+    <LinearGradient colors={['#B8CDD6', '#FFFFFF']} style={styles.container}>
       <View style={styles.titleContainer}>
         <Text style={styles.title}>StartCap, Tu mejor opción</Text>
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Proyectos')}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Proyectos')}>
           <MaterialCommunityIcons name="file-plus" size={30} color="#fff" />
           <Text style={styles.buttonText}>Proyectos</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Notificaciones')}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Notificaciones')}>
           <MaterialCommunityIcons name="bell-outline" size={26} color="#fff" />
           <Text style={styles.buttonText}>Notificaciones</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('Chat')}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Chat')}>
           <MaterialCommunityIcons name="chat-outline" size={26} color="#fff" />
           <Text style={styles.buttonText}>Chat</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('EmprendedorPerfil')}>
-          <MaterialCommunityIcons name="account-outline" size={26} color="#fff" />
-          <Text style={styles.buttonText}>Perfil</Text>
-        </TouchableOpacity>
+       
 
-        <TouchableOpacity style={styles.button} onPress={() => handleNavigation('MisProyectos')}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('MisProyectos')}>
           <MaterialCommunityIcons name="briefcase-outline" size={26} color="#fff" />
           <Text style={styles.buttonText}>Mis Proyectos</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('CerrarSesion')}>
-          <Entypo name="log-out" size={26} color="#fff" />
-          <Text style={styles.buttonText}>Cerrar Sesión</Text>
+
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Ajustes')}>
+          <MaterialCommunityIcons name="cog-outline" size={26} color="#fff" />
+          <Text style={styles.buttonText}>Ajustes</Text>
         </TouchableOpacity>
 
         {rol === 'emprendedor' && (
-          <TouchableOpacity style={styles.button} onPress={() => handleNavigation('EmprendedorDashboard')}>
+          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('EmprendedorDashboard')}>
             <MaterialCommunityIcons name="view-dashboard-outline" size={26} color="#fff" />
             <Text style={styles.buttonText}>Dashboard</Text>
           </TouchableOpacity>
@@ -114,8 +100,8 @@ const styles = StyleSheet.create({
   titleContainer: {
     width: '100%',
     alignItems: 'center',
-    paddingTop: 50, 
-    paddingBottom: 20, 
+    paddingTop: 50,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 24,
@@ -135,7 +121,7 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     paddingVertical: 8,
-    width: '13%', 
+    width: '13%',
   },
   buttonText: {
     color: '#fff',
