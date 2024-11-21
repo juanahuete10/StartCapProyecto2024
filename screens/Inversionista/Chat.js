@@ -1,105 +1,143 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Alert, ActivityIndicator } from 'react-native';
 import { GiftedChat } from 'react-native-gifted-chat';
-import { auth, db } from '../../firebase/firebaseconfig';
-import { collection, addDoc, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebaseconfig';
+import { collection, doc, getDoc, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 
-const Chat = ({ route, navigation }) => {
-  const { otherUserId = '', otherUserRole = '' } = route.params || {};
+const Chat = ({ route }) => {
+  const usuario = auth.currentUser;
+  const id_inversionista = usuario?.uid; // Obtener el ID del inversionista desde auth
+  const id_emprendedor = route.params?.id_emprendedor; // Asegurarse de que 'route' tenga los parámetros correctamente
+
+  const [roles, setRoles] = useState({ emprendedor: null, inversionista: null });
   const [messages, setMessages] = useState([]);
-  const [chatId, setChatId] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  // UID del usuario autenticado
-  const userId = auth.currentUser?.uid;
-  console.log("userId:", userId, "otherUserId:", otherUserId);
+  console.log("Route Params - id_emprendedor:", id_emprendedor, "id_inversionista:", id_inversionista);
 
-  useEffect(() => {
-    if (!userId || !otherUserId) {
-      Alert.alert("Error", "No se encontró el usuario con el que desea chatear.");
-      navigation.goBack();
-    } else {
-      createNewChat();
-    }
-  }, [userId, otherUserId]);
-
-  const createNewChat = async () => {
+  // Función para obtener el rol del usuario
+  const getUserRole = async (id_usuario) => {
     try {
-      const newChat = {
-        id_inversionista: otherUserRole === 'Inversionista' ? otherUserId : userId,
-        id_emprendedor: otherUserRole === 'Emprendedor' ? otherUserId : userId,
-        fecha: new Date(),
-        estado: 'No leído',
-      };
-      const chatDocRef = await addDoc(collection(db, 'chats'), newChat);
-      console.log("Chat creado con ID:", chatDocRef.id);
-      setChatId(chatDocRef.id);
-      setLoading(false);
+      const userRef = doc(db, 'usuarios', id_usuario);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        return userSnap.data().rol; // Suponiendo que el campo de rol se llama 'rol'
+      } else {
+        console.error("No se encontró el usuario en la base de datos");
+        return null;
+      }
     } catch (error) {
-      console.error("Error creando nuevo chat: ", error);
-      Alert.alert("No se pudo crear el chat. Inténtalo de nuevo.");
+      console.error("Error al obtener el rol del usuario:", error);
+      return null;
     }
   };
 
-  const onSend = useCallback(async (newMessages = []) => {
-    const newMessage = newMessages[0];
-    if (!userId || !chatId) return;
-
+  // Función para crear una notificación
+  const crearNotificacion = async (mensaje) => {
     try {
-      const chatRef = collection(db, 'chats', chatId, 'messages');
-      await addDoc(chatRef, {
-        contenido: newMessage.text,
+      await addDoc(collection(db, 'Notificacion'), {
+        Contenido: mensaje,
+        tipo: 'mensaje',
+        estado: 'recibidas',
         fecha: new Date(),
-        id_usuario: userId,
-        estado: 'No leído',
+        id_inversionista,
+        id_emprendedor,
       });
-      setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages));
     } catch (error) {
-      console.error("Error al enviar mensaje: ", error);
-      Alert.alert("No se pudo enviar el mensaje. Inténtalo de nuevo.");
+      console.error("Error al crear la notificación: ", error);
     }
-  }, [chatId, userId]);
+  };
 
-  useEffect(() => {
-    if (chatId) {
-      const chatRef = collection(db, 'chats', chatId, 'messages');
-      const q = query(chatRef, orderBy('fecha', 'asc'));
-
-      const unsubscribe = onSnapshot(q, snapshot => {
-        const chatMessages = snapshot.docs.map(doc => ({
-          _id: doc.id,
-          text: doc.data().contenido,
-          createdAt: doc.data().fecha.toDate(),
-          user: {
-            _id: doc.data().id_usuario,
-          },
-        }));
-
-        console.log("Mensajes recibidos:", chatMessages);
-        setMessages(chatMessages);
-        setLoading(false);
+  // Función para obtener o crear el chatId basado en los IDs de los usuarios
+  const getOrCreateChatId = async () => {
+    if (!id_emprendedor || !id_inversionista) {
+      console.error("Uno de los IDs es indefinido:", id_emprendedor, id_inversionista);
+      return null;
+    }
+    const ids = [id_emprendedor, id_inversionista].sort(); // Usar los ID correctamente
+    const potencialChatId = `${ids[0]}_${ids[1]}`;
+    const chatRef = doc(db, 'chat', potencialChatId);
+    const chatSnap = await getDoc(chatRef);
+    if (!chatSnap.exists()) {
+      // Si el chat no existe, lo creamos
+      const rolEmprendedor = await getUserRole(id_emprendedor);
+      const rolInversionista = await getUserRole(id_inversionista);
+      await setDoc(chatRef, {
+        id_inversionista: rolEmprendedor === 'inversionista' ? id_inversionista : id_emprendedor,
+        id_emprendedor: rolInversionista === 'emprendedor' ? id_emprendedor : id_inversionista,
       });
-
-      return () => unsubscribe();
     }
-  }, [chatId]);
+    return potencialChatId;
+  };
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
+  // Obtener el rol del usuario actual (emprendedor) y el inversionista cuando se monta el componente
+  useEffect(() => {
+    if (id_emprendedor && id_inversionista) {
+      const fetchRoles = async () => {
+        const rolEmprendedor = await getUserRole(id_emprendedor);
+        const rolInversionista = await getUserRole(id_inversionista);
+        setRoles({ emprendedor: rolEmprendedor, inversionista: rolInversionista });
+      };
+      fetchRoles();
+    }
+  }, [id_emprendedor, id_inversionista]);
+
+  // Obtener los mensajes del chat
+  useEffect(() => {
+    if (id_emprendedor && id_inversionista) {
+      getOrCreateChatId().then((id_chat) => {
+        if (!id_chat) return;
+        const q = query(collection(db, 'chat', id_chat, 'contenido'), orderBy('fecha', 'desc'));
+        const cancelarSuscripcion = onSnapshot(q, (snapshot) => {
+          setMessages(
+            snapshot.docs.map((doc) => ({
+              _id: doc.id,
+              text: doc.data().contenido,
+              createdAt: doc.data().fecha ? doc.data().fecha.toDate() : new Date(),
+              user: {
+                _id: doc.data().id_usuario,
+                name: "Nombre del Usuario", // Ajustar para obtener el nombre real si es necesario
+              },
+            }))
+          );
+        });
+        return () => cancelarSuscripcion();
+      });
+    }
+  }, [id_emprendedor, id_inversionista]);
+
+  // Función para enviar un mensaje
+  const onSend = useCallback((messages = []) => {
+    getOrCreateChatId().then((id_chat) => {
+      if (!id_chat) return;
+      messages.forEach(async (message) => {
+        await addDoc(collection(db, 'chat', id_chat, 'contenido'), {
+          contenido: message.text,
+          fecha: serverTimestamp(),
+          id_usuario: id_emprendedor, // Usar el UID del usuario actual
+          estado: 'No leído',
+        });
+
+        // Crear la notificación después de enviar el mensaje
+        let mensajeNotificacion = '';
+        if (roles.emprendedor) {
+          mensajeNotificacion = `Nuevo mensaje de Emprendedor ${id_emprendedor}`;
+        } else if (roles.inversionista) {
+          mensajeNotificacion = `Nuevo mensaje de Inversionista ${id_inversionista}`;
+        }
+
+        // Crear la notificación para el mensaje enviado
+        await crearNotificacion(mensajeNotificacion);
+      });
+    });
+  }, [id_emprendedor, roles]);
 
   return (
-    <View style={{ flex: 1 }}>
-      <GiftedChat
-        messages={messages}
-        onSend={(messages) => onSend(messages)}
-        user={{ _id: userId }}
-      />
-    </View>
+    <GiftedChat
+      messages={messages}
+      onSend={(messages) => onSend(messages)}
+      user={{
+        _id: id_emprendedor, // El UID del usuario actual
+      }}
+    />
   );
 };
 
