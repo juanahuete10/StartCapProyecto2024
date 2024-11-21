@@ -6,10 +6,11 @@ import { collection, getDocs, updateDoc, doc, query, getDoc } from 'firebase/fir
 import { db } from '../../firebase/firebaseconfig';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export default function InversionistaDashboard({ navigation }) {
+export default function InversionistaDashboard({ navigation, route }) {
   const [proyectos, setProyectos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const { emprendedor } = route.params;
 
   const cargarProyectos = async () => {
     setLoading(true);
@@ -62,12 +63,12 @@ export default function InversionistaDashboard({ navigation }) {
     (proyecto.descripcion && proyecto.descripcion.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleChat = (idEmprendedor) => {
-    navigation.navigate('Chat', { idEmprendedor });
+  const handleChat = (id_emprendedor) => {
+    navigation.navigate('Chat', { id_emprendedor });
   };
 
-  const handleEmprendedorPerfil = (idEmprendedor) => {
-    navigation.navigate('VerPerfilEmprendedor', { idEmprendedor });
+  const handleEmprendedorPerfil = (id_emprendedor) => {
+    navigation.navigate('VerPerfilEmprendedor', { id_emprendedor });
   };
 
   const renderProyecto = ({ item }) => (
@@ -96,7 +97,10 @@ export default function InversionistaDashboard({ navigation }) {
         </TouchableOpacity>
 
         <View style={styles.iconContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Chat')} style={styles.iconButton}>
+        <TouchableOpacity
+            onPress={() => item.emprendedor && handleChat(item.emprendedor.id_emprendedor)}
+            style={styles.iconButton}
+          >
             <MaterialCommunityIcons name="message" size={20} color="#1E90FF" />
             <Text style={styles.navText}>Chat</Text>
           </TouchableOpacity>
